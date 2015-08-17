@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -x "/etc/init.d/fruhod" ]; then
+    /etc/init.d/fruhod stop
+fi
+

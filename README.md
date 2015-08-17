@@ -1,2 +1,2 @@
 # fruhoapp
-Fruho - Universal VPN Client
+Fruho - Universal VPN client

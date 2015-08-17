@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Fruho
+Comment=VPN Client
+Exec=fruho %U
+Icon=fruho
+Terminal=false
+Type=Application
+Encoding=UTF-8
+Categories=Network;Application;

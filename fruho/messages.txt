@@ -1,0 +1,41 @@
+
+# _2eaf8d491417924c
+en=Connect
+es=
+pl=Połącz
+
+# _87fff3af45753920
+en=Disconnect
+es=
+pl=Rozłącz
+
+# _bf9c42ec59d68714
+#, {0} $pname
+en=Servers
+es=
+pl=Serwery
+
+
+
+# _afd638922a7655ae
+en=Disconnected
+es=
+pl=Rozłączony
+
+# _a9e00a1f366a7a19
+#, {0} $ip
+en=Connecting to {0} {1}
+es=
+pl=Łączenie do {0} {1}
+
+# _540ebc2e02c2c88e
+#, {0} $ip
+en=Connected to {0} {1}
+es=
+pl=Połączony do {0} {1}
+
+
+# _a297104e26a168e6
+en=Unknown
+es=
+pl=Nieznany

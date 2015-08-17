@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ -x "/etc/init.d/fruhod" ]; then
+    /etc/init.d/fruhod stop
+
+    # Some distros like OpenSUSE keep rcN.d dirs within init.d
+    if [ -d "/etc/init.d/rc2.d" ]; then
+        RCROOT="/etc/init.d"
+    elif [ -d "/etc/rc2.d" ]; then
+        RCROOT="/etc"
+    else
+        logger -s "ERROR: Could not locate sysvinit rcN.d directories"
+        exit 1
+    fi
+        
+    for level in 0 1 6; do
+        rm -f $RCROOT/rc${level}.d/K07fruhod
+    done
+    for level in 2 3 4 5; do
+        rm -f $RCROOT/rc${level}.d/S93fruhod
+    done
+    
+fi
+
+if [ -x /usr/local/bin/fruho.bin ]; then
+    /usr/local/bin/fruho.bin --remove-launcher
+fi

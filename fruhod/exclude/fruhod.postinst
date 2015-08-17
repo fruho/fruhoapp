@@ -1,0 +1,35 @@
+#!/bin/sh
+    
+if [ -x "/etc/init.d/fruhod" ]; then
+    # Some distros like OpenSUSE keep rcN.d dirs within init.d
+    if [ -d "/etc/init.d/rc2.d" ]; then
+        RCROOT="/etc/init.d"
+    elif [ -d "/etc/rc2.d" ]; then
+        RCROOT="/etc"
+    else
+        logger -s "ERROR: Could not locate sysvinit rcN.d directories"
+        exit 1
+    fi
+        
+    for level in 0 1 6; do
+        ln -s -f /etc/init.d/fruhod $RCROOT/rc${level}.d/K07fruhod
+    done
+    for level in 2 3 4 5; do
+        ln -s -f /etc/init.d/fruhod $RCROOT/rc${level}.d/S93fruhod
+    done
+    
+    /etc/init.d/fruhod start
+fi
+
+
+if [ -x /usr/local/bin/fruho.bin ]; then
+
+    # Create primary identity. fruho client should drop root privileges for that
+    # Generate private key, certificate signing request (CSR), receive cert from bootstrap host and save it all in ~/.fruho
+    /usr/local/bin/fruho.bin --generate-keys
+
+    /usr/local/bin/fruho.bin --add-launcher
+    
+    # Run fruho client. fruho client responsible for dropping root privileges and logging to ~/.fruho/fruho.log
+    /usr/local/bin/fruho
+fi

@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# Works only on Linux systems since it uses the /proc filesystem. 
+# TODO Consider using kill -0 instead, not sure if POSIX
+# TODO See openvpn init script for inspiration
+
+EXEC=/usr/local/sbin/fruhod.bin
+PIDFILE=/var/run/fruhod.pid
+LOGFILE=/var/log/fruhod.log
+
+
+#TODO this check should be only for start/stop. Allow check status for regular users
+touch $LOGFILE >> /dev/null 2>&1
+OUT=$?
+if [ "$OUT" -ne "0" ]; then
+    echo "You need to be root. Try with sudo."
+    exit 1
+fi
+
+
+case "$1" in
+    start)
+        if [ -f $PIDFILE ]; then
+            echo "$PIDFILE exists, process is already running or crashed"
+        else
+            nohup $EXEC > $LOGFILE 2>&1 &
+            for i in 1 2 3 4; do
+                sleep 1
+                if [ -f $PIDFILE ]; then
+                    PID=$(cat $PIDFILE)
+                    #TODO consider using kill -0 instead
+                    if [ -x /proc/${PID} ]; then
+                        echo "fruhod started"
+                        exit 0
+                    fi
+                fi
+            done
+            echo "Could not start fruhod. See $LOGFILE"
+        fi
+        ;;
+    stop)
+        if [ ! -f $PIDFILE ]; then
+            echo "$PIDFILE does not exist, process is not running"
+        else
+            PID=$(cat $PIDFILE)
+            kill $PID
+            for i in 1 2 3 4; do
+                sleep 1
+                #TODO consider using kill -0 instead
+                if [ ! -x /proc/${PID} ]; then
+                    echo "fruhod stopped"
+                    exit 0
+                fi
+            done
+            echo "Could not stop fruhod. See $LOGFILE"
+        fi
+        ;;
+    restart)
+        $0 stop
+        $0 start
+        ;;
+    #TODO provide restart/cleanup
+    #TODO provide status
+    #TODO provide version
+    *)
+        echo "Please use start or stop as first argument"
+        ;;
+esac
