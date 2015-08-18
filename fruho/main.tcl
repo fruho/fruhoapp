@@ -962,8 +962,7 @@ proc profile-tab-stand {profileid} {
     if {$profileid eq "addvpnprovider"} {
         return normal
     }
-    set status [effective-connstatus]
-    if {$status eq "connected" || $status eq "connecting"} {
+    if {[is-connecting-status]} {
         if {$profileid ne [connecting-profile]} {
             return disabled
         }
@@ -973,14 +972,18 @@ proc profile-tab-stand {profileid} {
 
 # return profileid of currently connecting or connected profile or empty string otherwise
 proc connecting-profile {} {
-    set status [effective-connstatus]
-    if {$status eq "connected" || $status eq "connecting"} {
+    if {[is-connecting-status]} {
         return [dict-pop $::model::Current_sitem profile ""]
     } else {
         return ""
     }
 }
 
+# actually "connecting" or "connected"
+proc is-connecting-status {} {
+    set status [effective-connstatus]
+    return [expr {$status eq "connected" || $status eq "connecting"}]
+}
 
 # stand is widget status calculated from the model
 proc connect-button-stand {} {
@@ -1096,6 +1099,9 @@ proc gui-update {} {
         .c.bs.slist configure -state [slist-button-stand]
         .c.stat.status configure -text [connect-msg-stand]
         profile-tabset-update
+        dash-plan-update
+        dash-time-update
+        dash-gauge-update
     } on error {e1 e2} {
         puts stderr [log "$e1 $e2"]
     }
@@ -1390,10 +1396,10 @@ proc dash-time-update {} {
 
 
 proc dash-gauge-update {} {
-    set profileid [current-profile]
-    if {$profileid ne [connecting-profile]} {
-        return
+    if {[is-addprovider-tab-selected]} {
+        return 
     }
+    set profileid [current-profile]
     set db .c.tabsetenvelope.nb.$profileid.db
 
     if {[winfo exists $db]} {
@@ -1597,9 +1603,6 @@ proc ProfileTabChanged {nb} {
     set profileid [lindex [split [$nb select] .] end]
     set ::model::selected_profile $profileid
     if {![is-addprovider-tab-selected]} {
-        dash-plan-update
-        dash-time-update
-        dash-gauge-update
         #usage-meter-update [model now]
     }
     gui-update
@@ -2510,7 +2513,9 @@ proc ffread {} {
                 set trafficdown [dict-pop $stat mgmt_rread 0]
                 traffic-speed-store $trafficup $trafficdown
 
-                dash-gauge-update
+                if {[is-connecting-status] && [current-profile] eq $profileid} {
+                    dash-gauge-update
+                }
             }
             #puts stderr "stat: $stat"
             #puts stderr "ovpn_config: $ovpn_config"
@@ -2545,18 +2550,24 @@ proc traffic-speed-store {trafficup trafficdown} {
 
 # returns trafficup, trafficdown and moving averages of speedup and speeddown
 proc traffic-speed-calc {} {
-    set difft [lbetween {a b} $::model::Previous_traffic_tstamp {expr {$b-$a}}]
-    set diffup [lbetween {a b} $::model::Previous_trafficup {expr {$b-$a}}]
-    set diffdown [lbetween {a b} $::model::Previous_trafficdown {expr {$b-$a}}]
+    set trafficup 0
+    set trafficdown 0
+    set speedupavg 0
+    set speeddownavg 0
+    if {$::model::Previous_traffic_tstamp ne ""} {
+        set difft [lbetween {a b} $::model::Previous_traffic_tstamp {expr {$b-$a}}]
+        set diffup [lbetween {a b} $::model::Previous_trafficup {expr {$b-$a}}]
+        set diffdown [lbetween {a b} $::model::Previous_trafficdown {expr {$b-$a}}]
 
-    if {[llength $difft] == [llength $diffup]} {
-        # list of speeds
-        set speedup [lmap tx $difft x $diffup {expr {1000*double($x)/double($tx)}}]
-        set speeddown [lmap tx $difft x $diffdown {expr {1000*double($x)/double($tx)}}]
-        set speedupavg [expr max(0, round([average-simple $speedup]))]
-        set speeddownavg [expr max(0, round([average-simple $speeddown]))]
-        set trafficup [lindex $::model::Previous_trafficup end]
-        set trafficdown [lindex $::model::Previous_trafficdown end]
+        if {[llength $difft] == [llength $diffup]} {
+            # list of speeds
+            set speedup [lmap tx $difft x $diffup {expr {1000*double($x)/double($tx)}}]
+            set speeddown [lmap tx $difft x $diffdown {expr {1000*double($x)/double($tx)}}]
+            set speedupavg [expr max(0, round([average-simple $speedup]))]
+            set speeddownavg [expr max(0, round([average-simple $speeddown]))]
+            set trafficup [lindex $::model::Previous_trafficup end]
+            set trafficdown [lindex $::model::Previous_trafficdown end]
+        }
     }
     return [list $trafficup $trafficdown $speedupavg $speeddownavg]
 }
@@ -2643,8 +2654,10 @@ proc ClickDisconnect {} {
         set ::model::Connstatus_enforced disconnected
         after 1500 [list set ::model::Connstatus_enforced ""]
         trigger-geo-loc 1000
+        set Previous_trafficup {}
+        set Previous_trafficdown {}
+        set Previous_traffic_tstamp {}
         gui-update
-    
         ffwrite stop
     } on error {e1 e2} {
         log "$e1 $e2"
