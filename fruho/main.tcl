@@ -2184,7 +2184,11 @@ proc ServerListClicked {} {
                 set city "Unknown"
             }
             set ip [dict get $sitem ip]
-            $wt insert {} end -id $id -image [img load 24/flag/$ccode] -values [list $country $city $ip]
+            set flag 24/flag/$ccode
+            if {![img exists $flag]} {
+                set flag 24/flag/EMPTY
+            }
+            $wt insert {} end -id $id -image [img load $flag] -values [list $country $city $ip]
         }
         $wt selection set $ssid
         grid columnconfigure $w 0 -weight 1
