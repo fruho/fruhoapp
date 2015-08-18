@@ -783,7 +783,7 @@ proc vpapi-cert-direct {profilename host port urlpath username password} {
             }
             <- $cherr {
                 set err [<- $cherr]
-                puts stderr [log vpapi-config-direct failed with error: $err]
+                puts stderr [log vpapi-cert-direct failed with error: $err]
                 # will return http response code
                 set httpcode $err
                 # Never call return from select condition
