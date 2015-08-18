@@ -85,7 +85,8 @@ proc ::from_file::ImportClicked {tab} {
             go update-bulk-loc $profileid
         
             # when repainting tabset select the newly created tab
-            tabset-profiles .c.tabsetenvelope [window-sibling $tab [name2id $newprofilename]]
+            set ::model::selected_profile [name2id $newprofilename]
+            tabset-profiles .c.tabsetenvelope
         }
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]

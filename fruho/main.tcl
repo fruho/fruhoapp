@@ -723,8 +723,6 @@ proc vpapi-config-direct {profilename host port urlpath username password} {
     try {
         set profileid [name2id $profilename]
         channel {chout cherr} 1
-        set query [http::formatQuery os [this-os] arch [this-arch]]
-        append urlpath ? $query
         set f [ovpndir $profileid config.ovpn]
         curl-dispatch $chout $cherr $host:$port -urlpath $urlpath -gettofile $f -basicauth [list $username $password]
         set httpcode ""
@@ -1502,12 +1500,12 @@ proc dynafont {args} {
 }
 
 
-proc tabset-profiles {p {selectedtab ""}} {
+proc tabset-profiles {p} {
     set nb $p.nb
     catch {destroy $nb}
     ttk::notebook $nb
     ttk::notebook::enableTraversal $nb
-    bind $nb <<NotebookTabChanged>> ProfileTabChanged
+    bind $nb <<NotebookTabChanged>> [list ProfileTabChanged $nb]
     foreach profileid [model active-profiles] {
         set tab [frame-profile $nb $profileid]
         set pdict [dict get $::model::Profiles $profileid]
@@ -1516,16 +1514,27 @@ proc tabset-profiles {p {selectedtab ""}} {
     }
     $nb add [frame-addvpnprovider $nb] -text "Add VPN Provider..."
     grid $nb -sticky news -padx 10 -pady 10 
-    if {$selectedtab ne ""} {
-        $nb select $selectedtab
-    } else {
-        #TODO this is temporary: auto select last tab
-        $nb select [expr {[llength [$nb tabs]] - 2}]
-    }
+    select-profile $nb
     return $nb
 }
 
-proc ProfileTabChanged {} {
+proc select-profile {nb} {
+    set candidate $nb.$::model::selected_profile
+    foreach tab [$nb tabs] {
+        if {$tab eq $candidate} {
+            $nb select $candidate
+            return
+        }
+    }
+    # otherwise select first tab and save in the model
+    set first [lindex [$nb tabs] 0]
+    set ::model::selected_profile [lindex [split $first .] end]
+    $nb select $first
+}
+
+proc ProfileTabChanged {nb} {
+    set profileid [lindex [split [$nb select] .] end]
+    set ::model::selected_profile $profileid
     if {![is-addprovider-tab-selected]} {
        #usage-meter-update [model now]
     }
@@ -1577,6 +1586,7 @@ proc window-sibling {w name} {
     set parent [join [lrange [split $w .] 0 end-1] .]
     return $parent.$name
 }
+
 
 # For example: .c.tabsetenvelope.nb.<profilename>
 proc current-tab-frame {} {
@@ -2215,7 +2225,7 @@ proc this-pcv {} {
     set platform [this-os]-[this-arch]
     set version [build-version]
     set cn $::model::Cn
-    return "p=$platform&v=$version&c=$cn"
+    return [http::formatQuery p $platform v $version c $cn]
 }
 
 

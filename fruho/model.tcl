@@ -29,8 +29,8 @@ namespace eval ::model {
     # General globals
     ######################################## 
 
-    # currently selected profile tab
-    variable current_profile fruho
+    # currently selected tab as a profileid (may need to be converted to full name of the tab frame)
+    variable selected_profile fruho
 
     # fruhod --- fruho client connection socket 
     variable Ffconn_sock ""
