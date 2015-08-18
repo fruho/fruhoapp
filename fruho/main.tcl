@@ -346,9 +346,8 @@ proc main-gui {} {
 
 proc check-for-updates {uframe} {
     try {
-        set platform [this-os]-[this-arch]
         channel {chout cherr} 1
-        curl-dispatch $chout $cherr bootstrap -urlpath /check-for-updates/$platform
+        curl-dispatch $chout $cherr bootstrap -urlpath /check-for-updates?[this-pcv]
         select {
             <- $chout {
                 set data [<- $chout]
@@ -500,10 +499,9 @@ proc plan-comparator {tstamp a b} {
 proc get-welcome {} {
     try {
         channel {chout cherr} 5
-        set platform [this-os]-[this-arch]
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /welcome/[build-version]/$platform/$::model::Cn
+            curl-dispatch $chout $cherr bootstrap -urlpath /welcome?[this-pcv]
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -560,7 +558,7 @@ proc get-external-loc {} {
         channel {chout cherr} 5
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /loc?as=json
+            curl-dispatch $chout $cherr bootstrap -urlpath /loc?[this-pcv]&as=json
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -604,7 +602,7 @@ proc get-bulk-loc {ips} {
         set loc {}
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /loc -method POST -type text/plain -postfromfile $ipfile
+            curl-dispatch $chout $cherr bootstrap -urlpath /loc?[this-pcv] -method POST -type text/plain -postfromfile $ipfile
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -887,7 +885,7 @@ proc get-faas-config {} {
         set password ""
 
         if {![is-cert-received fruho]} {
-            set result [vpapi-cert-direct Fruho bootstrap /vpapi/cert $username $password]
+            set result [vpapi-cert-direct Fruho bootstrap /vpapi/cert?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-cert-direct Fruho failed with status $result"]
                 return $result
@@ -895,7 +893,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-cert-direct Fruho SUCCESS]
         }
         if {![is-config-received fruho]} {
-            set result [vpapi-config-direct Fruho bootstrap /vpapi/config $username $password]
+            set result [vpapi-config-direct Fruho bootstrap /vpapi/config?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-config-direct Fruho failed with status $result"]
                 return $result
@@ -903,7 +901,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-config-direct Fruho SUCCESS]
         }
         if {![dict exists $::model::Profiles fruho plans]} {
-            set result [vpapi-plans-direct Fruho bootstrap /vpapi/plans $username $password]
+            set result [vpapi-plans-direct Fruho bootstrap /vpapi/plans?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-plans-direct Fruho failed with status $result"]
                 return $result
@@ -2212,6 +2210,13 @@ proc resolve-host {host} {
     }
 }
 
+
+proc this-pcv {} {
+    set platform [this-os]-[this-arch]
+    set version [build-version]
+    set cn $::model::Cn
+    return "p=$platform&v=$version&c=$cn"
+}
 
 
 # tablelist vs TkTable vs treectrl vs treeview vs BWidget::Tree

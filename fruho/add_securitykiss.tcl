@@ -86,7 +86,7 @@ proc ::securitykiss::ImportClicked {tab} {
         $pconf.importline.msg configure -text "Importing configuration from $dispname"
         $pconf.importline.button configure -state disabled
     
-        set result [vpapi-config-direct $newprofilename $host $port $path_config $username $password]
+        set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
         if {$result != 200} {
             if {$result == 401} {
                 set msg "Incorrect username or password"
@@ -99,7 +99,7 @@ proc ::securitykiss::ImportClicked {tab} {
             return
         }
         puts stderr "VPAPI-CONFIG-DIRECT completed"
-        set result [vpapi-plans-direct $newprofilename $host $port $path_plans $username $password]
+        set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
         if {$result != 200} {
             if {$result == 401} {
                 set msg "Incorrect username/password"
