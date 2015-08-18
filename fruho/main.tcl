@@ -958,19 +958,27 @@ proc profile-tabset-update {} {
     }
 }
 
-proc profile-tab-stand {profile} {
-    if {$profile eq "addvpnprovider"} {
+proc profile-tab-stand {profileid} {
+    if {$profileid eq "addvpnprovider"} {
         return normal
     }
     set status [effective-connstatus]
     if {$status eq "connected" || $status eq "connecting"} {
-        set connecting_profile [dict-pop $::model::Current_sitem profile ?]
-        #puts stderr "connecting_profile: $connecting_profile, profile: $profile"
-        if {$profile ne $connecting_profile} {
+        if {$profileid ne [connecting-profile]} {
             return disabled
         }
     }
     return normal
+}
+
+# return profileid of currently connecting or connected profile or empty string otherwise
+proc connecting-profile {} {
+    set status [effective-connstatus]
+    if {$status eq "connected" || $status eq "connecting"} {
+        return [dict-pop $::model::Current_sitem profile ""]
+    } else {
+        return ""
+    }
 }
 
 
@@ -1253,19 +1261,40 @@ proc format-date {sec} {
 
 
 proc frame-dashboard {p} {
-if 0 {
-    set db [frame $p.db -background yellow]
-    label $db.lbl -background red -text red
-    grid $db.lbl 
-    grid $db
-    return $db
-} else {
+    dash-plan $p
+#    dash-time $p
+    dash-gauge $p
+}
+
+proc dash-plan {p} {
+    set dbplan [frame $p.dbplan]
+    frame $dbplan.planname
+    label $dbplan.planname.lbl -text "Plan:"
+    label $dbplan.planname.val -font [dynafont -weight bold]
+    grid $dbplan.planname.lbl -row 0 -column 0 -sticky w
+    grid $dbplan.planname.val -row 0 -column 1 -sticky w
+
+    frame $dbplan.planexpiry
+    label $dbplan.planexpiry.lbl -text "Expiry date:"
+    label $dbplan.planexpiry.val -font [dynafont -weight bold]
+    grid $dbplan.planexpiry.lbl -row 0 -column 0 -sticky e
+    grid $dbplan.planexpiry.val -row 0 -column 1 -sticky e
+ 
+    grid columnconfigure $dbplan 0 -weight 1
+    grid columnconfigure $dbplan 1 -weight 1
+    grid $dbplan.planname -row 1 -column 0 -sticky w
+    grid $dbplan.planexpiry -row 1 -column 1 -sticky e
+    grid $dbplan -padx 10 -pady 10 -sticky news
+}
+
+
+proc dash-gauge {p} {
     set db [frame $p.db]
 
     set font1 [dynafont -size 14]
     set font2 [dynafont -size 20]
 
-    set gaugebg #dddddd
+    set gaugebg #eeeeee
     set gaugew 100
     set gaugeh 10
 
@@ -1329,16 +1358,46 @@ if 0 {
     grid columnconfigure $db [incr col] -minsize 100
     grid columnconfigure $db [incr col] -minsize 70
 
-    grid $db -padx 10 -pady 10
-    return $db
-}
+    grid $db -padx 10 -sticky n
 }
 
 
-proc frame-dashboard-update {profileid speedup speeddown trafficup trafficdown} {
+
+proc dash-plan-update {} {
+    set profileid [current-profile]
+    if {[is-addprovider-tab-selected]} {
+        return
+    }
+    set dbplan .c.tabsetenvelope.nb.$profileid.dbplan
+
+    if {[winfo exists $dbplan]} {
+        set tstamp [model now]
+        set planid [current-planid $tstamp $profileid]
+        set plan [dict get $::model::Profiles $profileid plans $planid]
+        set planname [dict-pop $plan name UNKNOWN]
+        set plan_start [plan-start $plan]
+        set plan_end [plan-end $plan]
+        set until [format-date $plan_end]
+        set period [dict-pop $plan timelimit period day]
+        $dbplan.planname.val configure -text $planname
+        $dbplan.planexpiry.val configure -text $until
+    }
+}
+
+proc dash-time-update {} {
+    #TODO
+}
+
+
+proc dash-gauge-update {} {
+    set profileid [current-profile]
+    if {$profileid ne [connecting-profile]} {
+        return
+    }
     set db .c.tabsetenvelope.nb.$profileid.db
 
     if {[winfo exists $db]} {
+        lassign [traffic-speed-calc] trafficup trafficdown speedup speeddown
         set speedup_f [format-mega $speedup]
         $db.speedup configure -text [lindex $speedup_f 0]
         $db.speedupunit configure -text [lindex $speedup_f 1]B/s
@@ -1515,6 +1574,8 @@ proc tabset-profiles {p} {
     $nb add [frame-addvpnprovider $nb] -text "Add VPN Provider..."
     grid $nb -sticky news -padx 10 -pady 10 
     select-profile $nb
+    dash-plan-update
+    dash-time-update
     return $nb
 }
 
@@ -1536,7 +1597,10 @@ proc ProfileTabChanged {nb} {
     set profileid [lindex [split [$nb select] .] end]
     set ::model::selected_profile $profileid
     if {![is-addprovider-tab-selected]} {
-       #usage-meter-update [model now]
+        dash-plan-update
+        dash-time-update
+        dash-gauge-update
+        #usage-meter-update [model now]
     }
     gui-update
 }
@@ -1604,7 +1668,6 @@ proc current-profile {} {
 proc frame-profile {p pname} {
     set f [frame $p.$pname]
     grid columnconfigure $f 0 -weight 1
-    grid rowconfigure $f 0 -weight 1
     # TODO here dispatch to different dashboard views
     #frame-usage-meter $f
     frame-dashboard $f
@@ -2078,11 +2141,11 @@ proc protoport-list {} {
 #TODO sorting by country and favorites
 proc ServerListClicked {} {
     try {
-        set profile [current-profile]
-        set planid [current-planid [model now] $profile]
-        set slist [model slist $profile $planid]
+        set profileid [current-profile]
+        set planid [current-planid [model now] $profileid]
+        set slist [model slist $profileid $planid]
         # we don't take selected_sitem_id directly from the model plan - give a chance to calculate/get random
-        set ssitem [model selected-sitem $profile $planid]
+        set ssitem [model selected-sitem $profileid $planid]
         set ssid [dict-pop $ssitem id {}]
     
     
@@ -2147,7 +2210,7 @@ proc ServerListClicked {} {
         $wt focus $ssid
         set modal [ShowModal $w]
         if {$modal eq "ok"} {
-            model selected-sitem $profile $planid [$wt selection]
+            model selected-sitem $profileid $planid [$wt selection]
         }
         #model print
         destroy $w
@@ -2442,13 +2505,12 @@ proc ffread {} {
             set meta [lindex [ovconf get $ovpn_config --meta] 0]
             if {$meta ne ""} {
                 set ::model::Current_sitem $meta
-                set profile [dict-pop $meta profile {}]
+                set profileid [dict-pop $meta profile {}]
                 set trafficup [dict-pop $stat mgmt_rwrite 0]
                 set trafficdown [dict-pop $stat mgmt_rread 0]
+                traffic-speed-store $trafficup $trafficdown
 
-                lassign [traffic-speed-calc $trafficup $trafficdown] speedup speeddown
-
-                frame-dashboard-update $profile $speedup $speeddown $trafficup $trafficdown
+                dash-gauge-update
             }
             #puts stderr "stat: $stat"
             #puts stderr "ovpn_config: $ovpn_config"
@@ -2464,42 +2526,39 @@ proc ffread {} {
 }
 
 
-# takes latest traffic measurements from stat
-# returns moving average of speedup and speeddown
-proc traffic-speed-calc {trafficup trafficdown} {
+# takes latest traffic measurements from stat and saves in the model
+proc traffic-speed-store {trafficup trafficdown} {
     set ms [clock milliseconds]
-    set n 5
+    set n $::model::previous_traffic_probes
 
     # prevent adding duplicate measurements what might result in time difference = 0 and division by zero later
     if {[lindex $::model::Previous_traffic_tstamp end] != $ms} {
         lappend ::model::Previous_traffic_tstamp $ms
         lappend ::model::Previous_trafficup $trafficup
         lappend ::model::Previous_trafficdown $trafficdown
+        # this will keep max n+1 items
+        set ::model::Previous_traffic_tstamp [lrange $::model::Previous_traffic_tstamp end-$n end]
+        set ::model::Previous_trafficup [lrange $::model::Previous_trafficup end-$n end]
+        set ::model::Previous_trafficdown [lrange $::model::Previous_trafficdown end-$n end]
     }
+}
 
-    # this will keep max n+1 items
-    set t [set ::model::Previous_traffic_tstamp [lrange $::model::Previous_traffic_tstamp end-$n end]]
-    set difft [lbetween {a b} $t {expr {$b-$a}}]
-
-    # this will keep max n+1 items
-    set up [set ::model::Previous_trafficup [lrange $::model::Previous_trafficup end-$n end]]
-    set diffup [lbetween {a b} $up {expr {$b-$a}}]
-
-    # this will keep max n+1 items
-    set down [set ::model::Previous_trafficdown [lrange $::model::Previous_trafficdown end-$n end]]
-    set diffdown [lbetween {a b} $down {expr {$b-$a}}]
-
+# returns trafficup, trafficdown and moving averages of speedup and speeddown
+proc traffic-speed-calc {} {
+    set difft [lbetween {a b} $::model::Previous_traffic_tstamp {expr {$b-$a}}]
+    set diffup [lbetween {a b} $::model::Previous_trafficup {expr {$b-$a}}]
+    set diffdown [lbetween {a b} $::model::Previous_trafficdown {expr {$b-$a}}]
 
     if {[llength $difft] == [llength $diffup]} {
-        #puts stderr "difft=$difft,    diffup=$diffup"
         # list of speeds
         set speedup [lmap tx $difft x $diffup {expr {1000*double($x)/double($tx)}}]
         set speeddown [lmap tx $difft x $diffdown {expr {1000*double($x)/double($tx)}}]
         set speedupavg [expr max(0, round([average-simple $speedup]))]
         set speeddownavg [expr max(0, round([average-simple $speeddown]))]
+        set trafficup [lindex $::model::Previous_trafficup end]
+        set trafficdown [lindex $::model::Previous_trafficdown end]
     }
-
-    return [list $speedupavg $speeddownavg]
+    return [list $trafficup $trafficdown $speedupavg $speeddownavg]
 }
 
 

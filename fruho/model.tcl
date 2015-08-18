@@ -124,6 +124,8 @@ if 0 {    variable Profiles [dict create fruho {
     variable Previous_trafficup {}
     variable Previous_trafficdown {}
     variable Previous_traffic_tstamp {}
+    # number of traffic probes saved and used for moving average - this is to be saved in config
+    variable previous_traffic_probes 5
 
     variable Gui_planline "Plan"
     variable Gui_usedlabel "Used"
