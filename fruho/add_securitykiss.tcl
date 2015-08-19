@@ -32,10 +32,10 @@ proc ::securitykiss::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "SecurityKISS username" -anchor e
-    ttk::entry $pconf.usernameinput -textvariable ::securitykiss::username
+    ttk::label $pconf.usernamelabel -text "$dispname username" -anchor e
+    ttk::entry $pconf.usernameinput -textvariable ::${name}::username
     ttk::label $pconf.usernameinfo -foreground grey -text "e.g. client12345678"
-    ttk::label $pconf.passwordlabel -text "SecurityKISS password" -anchor e
+    ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
     ttk::frame $pconf.importline
@@ -81,6 +81,9 @@ proc ::securitykiss::ImportClicked {tab} {
         variable username
         variable password
         variable newprofilename
+
+        set profileid [name2id $newprofilename]
+
         set pconf $tab.$name
         img place 24/connecting $pconf.importline.img
         $pconf.importline.msg configure -text "Importing configuration from $dispname"
@@ -111,16 +114,18 @@ proc ::securitykiss::ImportClicked {tab} {
             $pconf.importline.msg configure -text $msg
             return
         }
+        dict set ::model::Profiles $profileid username $username
+        dict set ::model::Profiles $profileid password $password
         puts stderr "VPAPI-PLANS-DIRECT completed"
     
         img place 24/empty $pconf.importline.img
         $pconf.importline.msg configure -text ""
         $pconf.importline.button configure -state normal
-        set ::securitykiss::username ""
+        set ::${name}::username ""
         set ::${name}::password ""
     
         # when repainting tabset select the newly created tab
-        set ::model::selected_profile [name2id $newprofilename]
+        set ::model::selected_profile $profileid
         tabset-profiles .c.tabsetenvelope
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]

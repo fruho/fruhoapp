@@ -2065,6 +2065,7 @@ proc OptionsClicked {} {
         button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
         button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
         button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
+        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list ProfileUpdatePlan $profl]
     
         grid $nb.profs.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.profs.buttons.down -row 1 -sticky nwe -pady {0 10}
@@ -2158,6 +2159,10 @@ proc ProfileDelete {tree} {
         }
     }
 }
+
+proc ProfileUpdatePlan {tree} {
+}
+
 
 proc TreeItemMove {direction tree} {
     set sel [$tree selection]
