@@ -35,8 +35,8 @@ proc ::from_file::create-import-frame {tab} {
     grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
     grid columnconfigure $pconf.select 0 -weight 1
     ttk::label $pconf.selectinfo -foreground grey
-    grid columnconfigure $pconf 0 -weight 3 -uniform 1
-    grid columnconfigure $pconf 1 -weight 5 -uniform 1
+    grid columnconfigure $pconf 0 -weight 4 -uniform 1
+    grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
     grid $pconf.profilelabel -row 1 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.profileinput -row 1 -column 1 -sticky news -padx 5 -pady 5

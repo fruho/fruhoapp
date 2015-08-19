@@ -32,10 +32,10 @@ proc ::securitykiss::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "Username" -anchor e
+    ttk::label $pconf.usernamelabel -text "SecurityKISS username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::securitykiss::username
     ttk::label $pconf.usernameinfo -foreground grey -text "e.g. client12345678"
-    ttk::label $pconf.passwordlabel -text "Password" -anchor e
+    ttk::label $pconf.passwordlabel -text "SecurityKISS password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
     ttk::frame $pconf.importline
@@ -47,8 +47,8 @@ proc ::securitykiss::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    grid columnconfigure $pconf 0 -weight 3 -uniform 1
-    grid columnconfigure $pconf 1 -weight 5 -uniform 1
+    grid columnconfigure $pconf 0 -weight 4 -uniform 1
+    grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
     grid $pconf.profilelabel -row 1 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.profileinput -row 1 -column 1 -sticky news -padx 5 -pady 5

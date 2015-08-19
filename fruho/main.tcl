@@ -1281,7 +1281,7 @@ proc dash-plan {p} {
     grid $dbplan.planname.val -row 0 -column 1 -sticky w
 
     frame $dbplan.planexpiry
-    label $dbplan.planexpiry.lbl -text "Expiry date:"
+    label $dbplan.planexpiry.lbl
     label $dbplan.planexpiry.val -font [dynafont -weight bold]
     grid $dbplan.planexpiry.lbl -row 0 -column 0 -sticky e
     grid $dbplan.planexpiry.val -row 0 -column 1 -sticky e
@@ -1384,8 +1384,15 @@ proc dash-plan-update {} {
         set plan_start [plan-start $plan]
         set plan_end [plan-end $plan]
         set until [format-date $plan_end]
+        set expires "Expires:"
         set period [dict-pop $plan timelimit period day]
         $dbplan.planname.val configure -text $planname
+        # if longer than 10 years
+        if {$plan_end - $plan_start > 315000000} {
+            set until ""
+            set expires ""
+        }
+        $dbplan.planexpiry.lbl configure -text $expires
         $dbplan.planexpiry.val configure -text $until
     }
 }
