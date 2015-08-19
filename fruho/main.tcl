@@ -809,7 +809,7 @@ proc vpapi-plans-direct {profilename host port urlpath username password} {
                 set profileid [name2id $profilename]
                 dict set ::model::Profiles $profileid plans $plans
                 dict set ::model::Profiles $profileid profilename $profilename
-                puts stderr "Profiles: $::model::Profiles"
+                #puts stderr "Profiles: $::model::Profiles"
                 set httpcode 200
                 # Never call return from select condition
             }
@@ -2066,7 +2066,9 @@ proc OptionsClicked {} {
         button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
         button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
         button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
-        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl]
+        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl $nb.profs]
+        label $nb.profs.statusline -compound left -text " "
+        img place 24/empty $nb.profs.statusline
     
         grid $nb.profs.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.profs.buttons.down -row 1 -sticky nwe -pady {0 10}
@@ -2090,6 +2092,7 @@ proc OptionsClicked {} {
         grid $profl -row 3 -column 0 -sticky news -padx 10 -pady 10
         grid $nb.profs.buttons -row 3 -column 1 -sticky nw -padx 10 -pady 10
         grid $nb.profs.panel -row 3 -column 2 -sticky news -padx 10 -pady 10
+        grid $nb.profs.statusline -row 4 -columnspan 3 -sticky w -padx 10 -pady {0 10}
 
         grid columnconfigure $nb.profs 2 -weight 1
     
@@ -2162,32 +2165,37 @@ proc ProfileDelete {tree} {
     }
 }
 
-proc ProfileUpdatePlan {tree} {
+proc ProfileUpdatePlan {tree tabframe} {
     try {
         set profileid [$tree selection]
         if {$profileid eq ""} {
             return
         }
         set profilename [dict-pop $::model::Profiles $profileid profilename {}]
+        img place 24/connecting $tabframe.statusline
+        $tabframe.statusline configure -text "Updating $profilename"
+        $tabframe.buttons.updateplan configure -state disabled
+
         set username [dict-pop $::model::Profiles $profileid vpapi_username {}]
         set password [dict-pop $::model::Profiles $profileid vpapi_password {}]
         set host [dict-pop $::model::Profiles $profileid vpapi_host {}]
         set port [dict-pop $::model::Profiles $profileid vpapi_port {}]
         set path_plans [dict-pop $::model::Profiles $profileid vpapi_path_plans {}]
         set result [vpapi-plans-direct $profilename $host $port $path_plans?[this-pcv] $username $password]
+        set msg "Updated profile $profilename"
         if {$result != 200} {
             if {$result == 401} {
                 set msg "Incorrect username/password"
             } else {
                 set msg $result
             }
-            #img place 24/empty $pconf.importline.img
-            #$pconf.importline.button configure -state normal
-            #$pconf.importline.msg configure -text $msg
-            #
             puts stderr "updateplan msg: $msg"
             return
         }
+        img place 24/empty $tabframe.statusline
+        $tabframe.statusline configure -text $msg
+        after 3000 [list $tabframe.statusline configure -text " "]
+        $tabframe.buttons.updateplan configure -state normal
         puts stderr "updateplan UPDATED"
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
