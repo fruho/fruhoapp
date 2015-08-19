@@ -2106,6 +2106,7 @@ proc OptionsClicked {} {
         #####################################################
         #
         ttk::notebook::enableTraversal $nb
+        bind $nb <<NotebookTabChanged>> [list OptionsTabChanged $nb]
         $nb add $nb.about -text About -padding 20
         $nb add $nb.connection -text Connection
         $nb add $nb.profs -text Profile
@@ -2156,6 +2157,13 @@ proc OptionsClicked {} {
     }
 }
 
+proc OptionsTabChanged {nb} {
+    options-connection-tab-update $nb.connection.ppl
+    options-profile-tab-update $nb.profs.profl
+
+}
+
+
 proc options-connection-tab-update {tree} {
     set tabframe .options_dialog.nb.connection
     set stateup disabled
@@ -2191,7 +2199,7 @@ proc options-profile-tab-update {tree} {
         }
         set statedelete normal
         set profileid $sel
-        if {[dict-pop $::model::Profiles $profileid vpapi_username {}] ne ""} {
+        if {$profileid eq "fruho" || [dict-pop $::model::Profiles $profileid vpapi_username {}] ne ""} {
             set stateupdateplan normal
         }
     }
