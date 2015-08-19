@@ -347,7 +347,7 @@ proc main-gui {} {
 proc check-for-updates {uframe} {
     try {
         channel {chout cherr} 1
-        curl-dispatch $chout $cherr bootstrap -urlpath /check-for-updates?[this-pcv]
+        curl-dispatch $chout $cherr bootstrap:10443 -urlpath /check-for-updates?[this-pcv]
         select {
             <- $chout {
                 set data [<- $chout]
@@ -501,7 +501,7 @@ proc get-welcome {} {
         channel {chout cherr} 5
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /welcome?[this-pcv]
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /welcome?[this-pcv]
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -558,7 +558,7 @@ proc get-external-loc {} {
         channel {chout cherr} 5
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /loc?[this-pcv]&as=json
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /loc?[this-pcv]&as=json
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -602,7 +602,7 @@ proc get-bulk-loc {ips} {
         set loc {}
         set success 0
         for {set i 0} {$i < 3 && !$success} {incr i} {
-            curl-dispatch $chout $cherr bootstrap -urlpath /loc?[this-pcv] -method POST -type text/plain -postfromfile $ipfile
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /loc?[this-pcv] -method POST -type text/plain -postfromfile $ipfile
             select {
                 <- $chout {
                     set data [<- $chout]
@@ -711,7 +711,7 @@ proc is-config-received {profileid} {
 
 
 proc curl-dispatch {chout cherr hostport args} {
-    if {$hostport eq "bootstrap"} {
+    if {[string match bootstrap:* $hostport]} {
         curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cadir $::model::CADIR {*}$args
     } else {
         curl-retry $chout $cherr -hostports [lrepeat 3 $hostport] {*}$args
@@ -797,7 +797,6 @@ proc vpapi-cert-direct {profilename host port urlpath username password} {
 
 proc vpapi-plans-direct {profilename host port urlpath username password} {
     try {
-        pq 333 vpapi-plans-direct $profilename $host $port $urlpath $username $password
         channel {chout cherr} 1
         curl-dispatch $chout $cherr $host:$port -urlpath $urlpath -basicauth [list $username $password]
         set httpcode ""
@@ -882,9 +881,11 @@ proc get-faas-config {} {
         set username $::model::Cn
         #TODO let the password verify Cn integrity
         set password ""
+        # we will call bootstrap servers from hostport list so port is not relevant
+        set port 10443
 
         if {![is-cert-received fruho]} {
-            set result [vpapi-cert-direct Fruho bootstrap /vpapi/cert?[this-pcv] $username $password]
+            set result [vpapi-cert-direct Fruho bootstrap $port /vpapi/cert?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-cert-direct Fruho failed with status $result"]
                 return $result
@@ -892,7 +893,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-cert-direct Fruho SUCCESS]
         }
         if {![is-config-received fruho]} {
-            set result [vpapi-config-direct Fruho bootstrap /vpapi/config?[this-pcv] $username $password]
+            set result [vpapi-config-direct Fruho bootstrap $port /vpapi/config?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-config-direct Fruho failed with status $result"]
                 return $result
@@ -900,7 +901,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-config-direct Fruho SUCCESS]
         }
         if {![dict exists $::model::Profiles fruho plans]} {
-            set result [vpapi-plans-direct Fruho bootstrap /vpapi/plans?[this-pcv] $username $password]
+            set result [vpapi-plans-direct Fruho bootstrap $port /vpapi/plans?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-plans-direct Fruho failed with status $result"]
                 return $result
@@ -1398,7 +1399,7 @@ proc dash-plan-update {tstamp} {
 
     if {[winfo exists $dbplan]} {
         set planid [current-planid $tstamp $profileid]
-        set plan [dict get $::model::Profiles $profileid plans $planid]
+        set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
         set planname [dict-pop $plan name UNKNOWN]
         set plan_start [plan-start $plan]
         set plan_end [plan-end $plan]
@@ -1425,7 +1426,7 @@ proc dash-time-update {tstamp} {
 
     if {[winfo exists $dbtime]} {
         set planid [current-planid $tstamp $profileid]
-        set plan [dict get $::model::Profiles $profileid plans $planid]
+        set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
         set period_start [period-start $plan $tstamp]
         set period_end [period-end $plan $tstamp]
         set period_elapsed [period-elapsed $plan $tstamp]
@@ -1946,7 +1947,7 @@ proc download-latest-skt {collector url filepath} {
     try {
         channel {chout cherr} 1
         # wget the binary
-        curl-dispatch $chout $cherr bootstrap -urlpath $url -gettofile $filepath
+        curl-dispatch $chout $cherr bootstrap:10443 -urlpath $url -gettofile $filepath
         log "download-latest-skt started $url $filepath"
         select {
             <- $chout {
@@ -2026,6 +2027,7 @@ proc OptionsClicked {} {
         label $nb.connection.info -text "OpenVPN connection protocol and port preference" -anchor w
         set ppl $nb.connection.ppl
         ttk::treeview $ppl -columns protoport -selectmode browse -show tree
+        bind $ppl <<TreeviewSelect>> [list options-connection-tab-update $ppl]
         frame $nb.connection.buttons
     
         button $nb.connection.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $ppl]
@@ -2053,6 +2055,7 @@ proc OptionsClicked {} {
     
         grid columnconfigure $nb.connection 2 -weight 1
     
+        options-connection-tab-update $ppl
     
         #####################################################
         # Profiles tab
@@ -2061,6 +2064,7 @@ proc OptionsClicked {} {
         label $nb.profs.info -text "Active profiles" -anchor w
         set profl $nb.profs.profl
         ttk::treeview $profl -columns profilename -selectmode browse -show tree
+        bind $profl <<TreeviewSelect>> [list options-profile-tab-update $profl]
         frame $nb.profs.buttons
     
         button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
@@ -2097,6 +2101,7 @@ proc OptionsClicked {} {
         grid columnconfigure $nb.profs 2 -weight 1
     
     
+        options-profile-tab-update $profl
     
         #####################################################
         #
@@ -2151,6 +2156,52 @@ proc OptionsClicked {} {
     }
 }
 
+proc options-connection-tab-update {tree} {
+    set tabframe .options_dialog.nb.connection
+    set stateup disabled
+    set statedown disabled
+    set sel [$tree selection]
+    if {$sel ne ""} {
+        set index [$tree index $sel]
+        if {$index > 0} {
+            set stateup normal
+        }
+        if {$index < [llength [$tree children {}]] - 1} {
+            set statedown normal
+        }
+    }
+    $tabframe.buttons.up configure -state $stateup
+    $tabframe.buttons.down configure -state $statedown
+}
+
+proc options-profile-tab-update {tree} {
+    set tabframe .options_dialog.nb.profs
+    set stateup disabled
+    set statedown disabled
+    set statedelete disabled
+    set stateupdateplan disabled
+    set sel [$tree selection]
+    if {$sel ne ""} {
+        set index [$tree index $sel]
+        if {$index > 0} {
+            set stateup normal
+        }
+        if {$index < [llength [$tree children {}]] - 1} {
+            set statedown normal
+        }
+        set statedelete normal
+        set profileid $sel
+        if {[dict-pop $::model::Profiles $profileid vpapi_username {}] ne ""} {
+            set stateupdateplan normal
+        }
+    }
+    $tabframe.buttons.up configure -state $stateup
+    $tabframe.buttons.down configure -state $statedown
+    $tabframe.buttons.delete configure -state $statedelete
+    $tabframe.buttons.updateplan configure -state $stateupdateplan
+}
+
+
 proc ProfileDelete {tree} {
     set profileid [$tree selection]
     if {$profileid ne ""} {
@@ -2163,6 +2214,7 @@ proc ProfileDelete {tree} {
             $tree selection set $newsel
         }
     }
+    options-profile-tab-update $tree
 }
 
 proc ProfileUpdatePlan {tree tabframe} {
@@ -2176,12 +2228,7 @@ proc ProfileUpdatePlan {tree tabframe} {
         $tabframe.statusline configure -text "Updating $profilename"
         $tabframe.buttons.updateplan configure -state disabled
 
-        set username [dict-pop $::model::Profiles $profileid vpapi_username {}]
-        set password [dict-pop $::model::Profiles $profileid vpapi_password {}]
-        set host [dict-pop $::model::Profiles $profileid vpapi_host {}]
-        set port [dict-pop $::model::Profiles $profileid vpapi_port {}]
-        set path_plans [dict-pop $::model::Profiles $profileid vpapi_path_plans {}]
-        set result [vpapi-plans-direct $profilename $host $port $path_plans?[this-pcv] $username $password]
+        set result [vpapi-plans-direct $profilename [vpapi-host $profileid] [vpapi-port $profileid] [vpapi-path-plans $profileid]?[this-pcv] [vpapi-username $profileid] [vpapi-password $profileid]]
         set msg "Updated profile $profilename"
         if {$result != 200} {
             if {$result == 401} {
@@ -2190,21 +2237,38 @@ proc ProfileUpdatePlan {tree tabframe} {
                 set msg $result
             }
             puts stderr "updateplan msg: $msg"
-            return
         }
         img place 24/empty $tabframe.statusline
         $tabframe.statusline configure -text $msg
         after 3000 [list $tabframe.statusline configure -text " "]
         $tabframe.buttons.updateplan configure -state normal
-        puts stderr "updateplan UPDATED"
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
 }
 
 
+proc vpapi-username {profileid} {
+    return [dict-pop $::model::Profiles $profileid vpapi_username $::model::Cn]
+}
+proc vpapi-password {profileid} {
+    return [dict-pop $::model::Profiles $profileid vpapi_password {}]
+}
+proc vpapi-host {profileid} {
+    return [dict-pop $::model::Profiles $profileid vpapi_host bootstrap]
+}
+proc vpapi-port {profileid} {
+    return [dict-pop $::model::Profiles $profileid vpapi_port 10443]
+}
+proc vpapi-path-plans {profileid} {
+    return [dict-pop $::model::Profiles $profileid vpapi_path_plans /vpapi/plans]
+}
+
 proc TreeItemMove {direction tree} {
     set sel [$tree selection]
+    if {$sel eq ""} {
+        return
+    }
     set index [$tree index $sel]
     if {$direction eq "up"} {
         $tree move $sel {} [incr index -1]
@@ -2213,6 +2277,8 @@ proc TreeItemMove {direction tree} {
     } else {
         error "Wrong direction in TreeItemMove"
     }
+    options-connection-tab-update $tree
+    options-profile-tab-update $tree
 }
 
 proc protoport-list {} {
