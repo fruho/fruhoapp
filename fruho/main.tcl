@@ -2232,9 +2232,7 @@ proc ProfileUpdatePlan {tree tabframe} {
             return
         }
         set profilename [dict-pop $::model::Profiles $profileid profilename {}]
-        img place 24/connecting $tabframe.statusline
-        $tabframe.statusline configure -text "Updating $profilename"
-        $tabframe.buttons.updateplan configure -state disabled
+        profile-update-plan-statusline $tabframe "Updating $profilename" 24/connecting disabled
 
         set result [vpapi-plans-direct $profilename [vpapi-host $profileid] [vpapi-port $profileid] [vpapi-path-plans $profileid]?[this-pcv] [vpapi-username $profileid] [vpapi-password $profileid]]
         set msg "Updated profile $profilename"
@@ -2246,14 +2244,21 @@ proc ProfileUpdatePlan {tree tabframe} {
             }
             puts stderr "updateplan msg: $msg"
         }
-        img place 24/empty $tabframe.statusline
-        $tabframe.statusline configure -text $msg
-        after 3000 [list $tabframe.statusline configure -text " "]
-        $tabframe.buttons.updateplan configure -state normal
+        profile-update-plan-statusline $tabframe $msg 24/empty normal
+        after 3000 [list profile-update-plan-statusline $tabframe " " 24/empty normal]
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
 }
+
+proc profile-update-plan-statusline {tabframe msg img state} {
+    catch {
+        img place $img $tabframe.statusline
+        $tabframe.statusline configure -text $msg
+        $tabframe.buttons.updateplan configure -state $state
+    }
+}
+
 
 
 proc vpapi-username {profileid} {
