@@ -108,7 +108,7 @@ if 0 {    variable Profiles [dict create fruho {
 
     variable layout_bg1 white
     variable layout_bg2 grey95
-    variable layout_bg3 "light grey"
+    variable layout_bg3 #eeeeee
     variable layout_fgused grey
     variable layout_fgelapsed grey
     variable layout_x 300
@@ -126,13 +126,6 @@ if 0 {    variable Profiles [dict create fruho {
     variable Previous_traffic_tstamp {}
     # number of traffic probes saved and used for moving average - this is to be saved in config
     variable previous_traffic_probes 5
-
-    variable Gui_planline "Plan"
-    variable Gui_usedlabel "Used"
-    variable Gui_usedsummary "?"
-    variable Gui_elapsedlabel "Elapsed"
-    variable Gui_elapsedsummary "?"
-
 
     # client id
     variable Cn ""

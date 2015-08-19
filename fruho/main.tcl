@@ -192,7 +192,7 @@ proc main {} {
     
         in-ui main
         daemon-monitor
-        #plan-monitor
+        plan-monitor
     } on error {e1 e2} {
         log $e1 $e2
     }
@@ -1099,8 +1099,9 @@ proc gui-update {} {
         .c.bs.slist configure -state [slist-button-stand]
         .c.stat.status configure -text [connect-msg-stand]
         profile-tabset-update
-        dash-plan-update
-        dash-time-update
+        set now [model now]
+        dash-plan-update $now
+        dash-time-update $now
         dash-gauge-update
     } on error {e1 e2} {
         puts stderr [log "$e1 $e2"]
@@ -1268,7 +1269,7 @@ proc format-date {sec} {
 
 proc frame-dashboard {p} {
     dash-plan $p
-#    dash-time $p
+    dash-time $p
     dash-gauge $p
 }
 
@@ -1291,6 +1292,24 @@ proc dash-plan {p} {
     grid $dbplan.planname -row 1 -column 0 -sticky w
     grid $dbplan.planexpiry -row 1 -column 1 -sticky e
     grid $dbplan -padx 10 -pady 10 -sticky news
+}
+
+proc dash-time {p} {
+    set bg3 $::model::layout_bg3
+    set fgelapsed $::model::layout_fgelapsed
+    set barw $::model::layout_barw
+    set barh $::model::layout_barh
+
+    set dbtime [frame $p.dbtime]
+
+    label $dbtime.elapsedlabel -text "Timeline:" ;#-background #bbbbbb 
+    frame $dbtime.elapsedbar -background $bg3 -width $barw -height $barh
+    frame $dbtime.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
+    place $dbtime.elapsedbar.fill -x 0 -y 0
+    label $dbtime.elapsedsummary ;#-background #bbbbbb
+    grid $dbtime.elapsedlabel $dbtime.elapsedbar $dbtime.elapsedsummary -row 2 -padx 5 -pady 5 -sticky w
+    grid $dbtime
+
 }
 
 
@@ -1369,7 +1388,7 @@ proc dash-gauge {p} {
 
 
 
-proc dash-plan-update {} {
+proc dash-plan-update {tstamp} {
     set profileid [current-profile]
     if {[is-addprovider-tab-selected]} {
         return
@@ -1377,7 +1396,6 @@ proc dash-plan-update {} {
     set dbplan .c.tabsetenvelope.nb.$profileid.dbplan
 
     if {[winfo exists $dbplan]} {
-        set tstamp [model now]
         set planid [current-planid $tstamp $profileid]
         set plan [dict get $::model::Profiles $profileid plans $planid]
         set planname [dict-pop $plan name UNKNOWN]
@@ -1397,8 +1415,33 @@ proc dash-plan-update {} {
     }
 }
 
-proc dash-time-update {} {
-    #TODO
+proc dash-time-update {tstamp} {
+    set profileid [current-profile]
+    if {[is-addprovider-tab-selected]} {
+        return
+    }
+    set dbtime .c.tabsetenvelope.nb.$profileid.dbtime
+
+    if {[winfo exists $dbtime]} {
+        set planid [current-planid $tstamp $profileid]
+        set plan [dict get $::model::Profiles $profileid plans $planid]
+        set period_start [period-start $plan $tstamp]
+        set period_end [period-end $plan $tstamp]
+        set period_elapsed [period-elapsed $plan $tstamp]
+        set period_length [period-length $plan $tstamp]
+        if {$period_elapsed > 0 && $period_length > 0 && $period_elapsed > $period_length} {
+            set period_elapsed $period_length
+        }
+        set barw $::model::layout_barw
+        set summary ""
+        set we 0
+        if {$period_elapsed > 0 && $period_length > 0} {
+            set summary "[format-interval $period_elapsed] / [format-interval $period_length 1]"
+            set we [expr {$barw * $period_elapsed / $period_length}]
+        }
+        $dbtime.elapsedbar.fill configure -width $we
+        $dbtime.elapsedsummary configure -text $summary
+    }
 }
 
 
@@ -1421,7 +1464,6 @@ proc dash-gauge-update {} {
         lassign [speed-gauge-calc $speedup 2000000 100] width rgb
         #puts stderr "speedup $speedup   width $width    rgb: $rgb"
         $db.speedupgauge.fill configure -background $rgb -width $width
-    
     
         set trafficup_f [format-mega $trafficup]
         $db.trafficup configure -text [lindex $trafficup_f 0]
@@ -1587,8 +1629,9 @@ proc tabset-profiles {p} {
     $nb add [frame-addvpnprovider $nb] -text "Add VPN Provider..."
     grid $nb -sticky news -padx 10 -pady 10 
     select-profile $nb
-    dash-plan-update
-    dash-time-update
+    set now [model now]
+    dash-plan-update $now
+    dash-time-update $now
     return $nb
 }
 
@@ -2028,7 +2071,7 @@ proc OptionsClicked {} {
         grid $nb.profs.buttons.delete -row 2 -sticky nwe -pady {0 10}
     
         $profl column #0 -width 30 -anchor w -stretch 0
-        $profl column 0 -width 100 -anchor w
+        $profl column 0 -width 160 -anchor w
     
         foreach profileid [model active-profiles] {
             set profilename [dict-pop $::model::Profiles $profileid profilename $profileid]
@@ -2422,11 +2465,8 @@ proc curl-retry {tryout tryerr args} {
 proc plan-monitor {} {
     if {![is-addprovider-tab-selected]} {
         set now [model now]
-        #set slist [current-slist $now]
-        #puts stderr "current-slist: $slist"
-        #TODO calculate slist on the fly
-        #model slist [current-profile] $slist
-        usage-meter-update $now
+        dash-plan-update $now
+        dash-time-update $now
     }
     after 5000 plan-monitor
 }
