@@ -114,8 +114,12 @@ proc ::securitykiss::ImportClicked {tab} {
             $pconf.importline.msg configure -text $msg
             return
         }
-        dict set ::model::Profiles $profileid username $username
-        dict set ::model::Profiles $profileid password $password
+        dict set ::model::Profiles $profileid vpapi_username $username
+        dict set ::model::Profiles $profileid vpapi_password $password
+        dict set ::model::Profiles $profileid vpapi_host $host
+        dict set ::model::Profiles $profileid vpapi_port $port
+        dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
+
         puts stderr "VPAPI-PLANS-DIRECT completed"
     
         img place 24/empty $pconf.importline.img

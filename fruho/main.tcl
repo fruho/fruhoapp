@@ -797,6 +797,7 @@ proc vpapi-cert-direct {profilename host port urlpath username password} {
 
 proc vpapi-plans-direct {profilename host port urlpath username password} {
     try {
+        pq 333 vpapi-plans-direct $profilename $host $port $urlpath $username $password
         channel {chout cherr} 1
         curl-dispatch $chout $cherr $host:$port -urlpath $urlpath -basicauth [list $username $password]
         set httpcode ""
@@ -2065,11 +2066,12 @@ proc OptionsClicked {} {
         button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
         button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
         button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
-        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list ProfileUpdatePlan $profl]
+        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl]
     
         grid $nb.profs.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.profs.buttons.down -row 1 -sticky nwe -pady {0 10}
         grid $nb.profs.buttons.delete -row 2 -sticky nwe -pady {0 10}
+        grid $nb.profs.buttons.updateplan -row 3 -sticky nwe -pady {0 10}
     
         $profl column #0 -width 30 -anchor w -stretch 0
         $profl column 0 -width 160 -anchor w
@@ -2161,6 +2163,35 @@ proc ProfileDelete {tree} {
 }
 
 proc ProfileUpdatePlan {tree} {
+    try {
+        set profileid [$tree selection]
+        if {$profileid eq ""} {
+            return
+        }
+        set profilename [dict-pop $::model::Profiles $profileid profilename {}]
+        set username [dict-pop $::model::Profiles $profileid vpapi_username {}]
+        set password [dict-pop $::model::Profiles $profileid vpapi_password {}]
+        set host [dict-pop $::model::Profiles $profileid vpapi_host {}]
+        set port [dict-pop $::model::Profiles $profileid vpapi_port {}]
+        set path_plans [dict-pop $::model::Profiles $profileid vpapi_path_plans {}]
+        set result [vpapi-plans-direct $profilename $host $port $path_plans?[this-pcv] $username $password]
+        if {$result != 200} {
+            if {$result == 401} {
+                set msg "Incorrect username/password"
+            } else {
+                set msg $result
+            }
+            #img place 24/empty $pconf.importline.img
+            #$pconf.importline.button configure -state normal
+            #$pconf.importline.msg configure -text $msg
+            #
+            puts stderr "updateplan msg: $msg"
+            return
+        }
+        puts stderr "updateplan UPDATED"
+    } on error {e1 e2} {
+        puts stderr [log $e1 $e2]
+    }
 }
 
 
