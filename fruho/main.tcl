@@ -2697,7 +2697,7 @@ proc ffread-loop {} {
                     #puts stderr "ovpn_config: $ovpn_config"
                     #puts stderr "meta: $meta"
 
-                    $::model::Chan_stat_report <- [connstatus-reported $stat]
+                    $::model::Chan_stat_report <- $stat
                 }
             }
             log fruhod>> $line
@@ -2856,10 +2856,12 @@ proc connstatus-loop {} {
                     gui-update
                 }
                 <- $::model::Chan_stat_report {
-                    set newstatus [<- $::model::Chan_stat_report]
+                    set stat [<- $::model::Chan_stat_report]
+                    pq 333 $stat
+                    set newstatus [connstatus-reported $stat]
                     # ignore stat report connstatus if it confirms current Connstatus
                     if {$newstatus ne [model connstatus]} {
-                        # the stat report is the ultimate source of truth about connstatus BUT it may out of date so consider it only after a delay since last change
+                        # the stat report is the ultimate source of truth about connstatus BUT it may be out of date so consider it only after a delay since last change
                         if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
                             pq 77 $newstatus
                             model connstatus $newstatus
