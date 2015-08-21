@@ -179,6 +179,20 @@ proc ::model::active-profiles {} {
 }
 
 
+proc ::model::connstatus {args} {
+    if {[llength $args] == 1} {
+        # unknown status can be immediately overwritten so while setting unknown status reset last change tstamp to 0 so that stat report does not need to delay update
+        set newstatus [lindex $args 0]
+        set ::model::Connstatus $newstatus
+        if {$newstatus ne "unknown"} {
+            set ::model::Connstatus_change_tstamp [clock milliseconds]
+        }
+    } else {
+        return $::model::Connstatus
+    }
+}
+
+
 
 proc ::model::ini2model {inifile} {
     touch $inifile

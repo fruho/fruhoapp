@@ -949,7 +949,7 @@ proc connecting-profile {} {
 
 # actually "connecting" or "connected"
 proc is-connecting-status {} {
-    set status [effective-connstatus]
+    set status [model connstatus]
     return [expr {$status eq "connected" || $status eq "connecting"}]
 }
 
@@ -962,7 +962,7 @@ proc connect-button-stand {} {
     if {![is-cert-received [current-profile]] || ![is-config-received [current-profile]]} {
         return disabled
     }
-    set status [effective-connstatus]
+    set status [model connstatus]
     switch $status {
         unknown {set state disabled}
         disconnected {set state normal}
@@ -985,7 +985,7 @@ proc disconnect-button-stand {} {
             return disabled
         }
     }
-    set status [effective-connstatus]
+    set status [model connstatus]
     switch $status {
         unknown {set state disabled}
         disconnected {set state disabled}
@@ -1017,12 +1017,12 @@ proc connect-flag-stand {} {
 }
 
 proc connect-image-stand {} {
-    set status [effective-connstatus]
+    set status [model connstatus]
     return $status
 }
 
 proc connect-msg-stand {} {
-    set status [effective-connstatus]
+    set status [model connstatus]
     set city [dict-pop $::model::Current_sitem city ?]
     set ccode [dict-pop $::model::Current_sitem ccode ?]
     switch $status {
@@ -2587,7 +2587,7 @@ proc daemon-monitor {} {
     set ms [clock milliseconds]
     if {$ms - $::model::Ffconn_beat > 3000} {
         log "Heartbeat not received within last 3 seconds. Restarting connection."
-        set ::model::Connstatus unknown
+        model connstatus unknown
         gui-update
         ffconn-close
         daemon-connect 7777
@@ -2843,8 +2843,7 @@ proc connstatus-loop {} {
                     <- $::model::Chan_button_disconnect
                     pq 43 disconnect
                     connection-windup
-                    set ::model::Connstatus disconnected
-                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    model connstatus disconnected
                     # this cancels the timeout
                     set chtimeout $empty_channel
                     gui-update
@@ -2852,20 +2851,18 @@ proc connstatus-loop {} {
                 <- $::model::Chan_button_connect {
                     <- $::model::Chan_button_connect
                     pq 41 connect
-                    set ::model::Connstatus connecting
-                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    model connstatus connecting
                     timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
                     gui-update
                 }
                 <- $::model::Chan_stat_report {
                     set newstatus [<- $::model::Chan_stat_report]
                     # ignore stat report connstatus if it confirms current Connstatus
-                    if {$newstatus ne $::model::Connstatus} {
+                    if {$newstatus ne [model connstatus]} {
                         # the stat report is the ultimate source of truth about connstatus BUT it may out of date so consider it only after a delay since last change
-                        if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 2000} {
+                        if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
                             pq 77 $newstatus
-                            set ::model::Connstatus $newstatus
-                            set ::model::Connstatus_change_tstamp [clock milliseconds]
+                            model connstatus $newstatus
                             if {$newstatus eq "connected"} {
                                 trigger-geo-loc 1000
                                 # this cancels the timeout
@@ -2878,8 +2875,7 @@ proc connstatus-loop {} {
                 <- $chtimeout {
                     <- $chtimeout
                     pq 42 timeout
-                    set ::model::Connstatus timeout
-                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    model connstatus timeout
                     connection-windup
                     gui-update
                 }
@@ -2906,11 +2902,6 @@ proc connstatus-reported {stat} {
     }
     return $connstatus
 }
-
-proc effective-connstatus {} {
-    return $::model::Connstatus
-}
-
 
 proc connection-windup {} {
     trigger-geo-loc 1000
