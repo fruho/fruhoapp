@@ -6,6 +6,7 @@
 
 package require inicfg
 package require skutil
+package require csp
 
 namespace eval ::model {
     
@@ -49,15 +50,6 @@ namespace eval ::model {
     # latest fruho version to upgrade from check-for-updates
     variable Latest_version 0
 
-    # OpenVPN connection status as reported by fruhod/openvpn stat reports
-    # Although the source of truth for connstatus is fruhod stat reports
-    # we keep local copy to know when to update display
-    variable Connstatus unknown
-
-    # Connection status enforced temporarily  by GUI controls (pressing button) 
-    # in order to show GUI changes (disabled/enabled) immediately
-    # without waiting for update from reports from fruho/openvpn
-    variable Connstatus_enforced ""
 
     # Last line of log received from fruhod/openvpn server with ovpn prefix
     variable OvpnServerLog ""
@@ -120,12 +112,32 @@ if 0 {    variable Profiles [dict create fruho {
 
     variable Geo_loc ""
 
+
+    # OpenVPN connection status as reported by fruhod/openvpn stat reports
+    # Although the source of truth for connstatus is fruhod stat reports (but it is not always up-to-date)
+    # we keep local copy to know when to update display
+    variable Connstatus unknown
+    variable Connstatus_change_tstamp 0
+
+
     # Last N measurements of traffic up, down and timestamps for currently connected profile
     variable Previous_trafficup {}
     variable Previous_trafficdown {}
     variable Previous_traffic_tstamp {}
     # number of traffic probes saved and used for moving average - this is to be saved in config
     variable previous_traffic_probes 5
+
+
+    variable Gui_openvpn_connection_timeout 15
+    variable openvpn_connection_timeout 15
+
+    csp::channel ::model::Chan_button_connect
+    csp::channel ::model::Chan_button_disconnect
+    csp::channel ::model::Chan_stat_report
+    csp::channel ::model::Chan_ffread
+
+
+
 
     # client id
     variable Cn ""

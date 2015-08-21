@@ -192,6 +192,7 @@ proc main {} {
     
         in-ui main
         daemon-monitor
+        go ffread-loop
         plan-monitor
     } on error {e1 e2} {
         log $e1 $e2
@@ -337,6 +338,7 @@ proc main-gui {} {
     
         go get-welcome
         go faas-config-monitor
+        go connstatus-loop
         gui-update
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
@@ -844,18 +846,6 @@ proc MovedResized {window x y w h} {
 
 
 
-# Extract new OpenVPN connstatus from fruhod stat report
-# update the model and refresh display if status changed
-proc conn-status-update {stat} {
-    set newstatus [conn-status-reported $stat]
-    if {$newstatus ne $::model::Connstatus} {
-        set ::model::Connstatus $newstatus
-        if {$newstatus eq "connected"} {
-            trigger-geo-loc 1000
-        }
-        gui-update
-    }
-}
 
 proc faas-config-monitor {} {
     try {
@@ -916,30 +906,6 @@ proc get-faas-config {} {
 }
 
 
-# Extract new OpenVPN connstatus from fruhod stat report
-proc conn-status-reported {stat} {
-    if {$stat eq ""} {
-        set connstatus unknown
-    } elseif {[dict get $stat ovpn_pid] == 0} {
-        set connstatus disconnected
-    # model::mgmt_connstatus may store stale value - it is valid only when ovpn_pid is not zero
-    } elseif {[dict get $stat mgmt_connstatus] eq "CONNECTED"} {
-        set connstatus connected
-    } else {
-        set connstatus connecting
-    }
-    return $connstatus
-}
-
-proc effective-connstatus {} {
-    # this represents fruhod/openvpn connection status
-    set status $::model::Connstatus
-    # Connstatus_enforced represents status set by GUI controls and may overwrite the connection status
-    if {$::model::Connstatus_enforced ne ""} {
-        set status $::model::Connstatus_enforced
-    }
-    return $status
-}
 
 # Actually this is a profile tab but let's call it "addprovider" tab
 proc is-addprovider-tab-selected {} {
@@ -1002,6 +968,7 @@ proc connect-button-stand {} {
         disconnected {set state normal}
         connecting {set state disabled}
         connected {set state disabled}
+        timeout {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1024,6 +991,7 @@ proc disconnect-button-stand {} {
         disconnected {set state disabled}
         connecting {set state normal}
         connected {set state normal}
+        timeout {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1060,6 +1028,7 @@ proc connect-msg-stand {} {
     switch $status {
         unknown         {set msg [_ "Unknown"]}
         disconnected    {set msg [_ "Disconnected"]}
+        timeout         {set msg [_ "Disconnected"]}
         connecting      {
             if {$city ne "" && $ccode ne ""} {
                 set msg [_ "Connecting to {0}, {1}, port {2}" $city $ccode $::model::Current_protoport]
@@ -1084,8 +1053,17 @@ proc externalip-stand {} {
 }
 
 
+# for there is a mix of various GUI components updated all together:
+# - flag/IP
+# - connstatus
+# - gauge
+# We may need to split it later to avoid:
+# - animated icons shimmering on unnecessary updates
+# - for performance reasons
+# - to avoid gauge flickering - it should be updated at regular intervals
 proc gui-update {} {
     try {
+        pq 88 [connect-image-stand]
         img place 32/status/[connect-image-stand] .c.stat.imagestatus
         img place 64/flag/[connect-flag-stand] .c.stat.flag 64/flag/EMPTY
         set externalip [externalip-stand]
@@ -1593,8 +1571,8 @@ proc frame-status {p} {
 
 proc frame-buttons {p} {
     set bs [ttk::frame $p.bs]
-    button $bs.connect -font [dynafont -size 12] -compound left -image [img load 24/connect] -text [_ "Connect"] -command ClickConnect ;# _2eaf8d491417924c
-    button $bs.disconnect -font [dynafont -size 12] -compound left -image [img load 24/disconnect] -text [_ "Disconnect"] -command ClickDisconnect ;# _87fff3af45753920
+    button $bs.connect -font [dynafont -size 12] -compound left -image [img load 24/connect] -text [_ "Connect"] -command [list go ClickConnect] ;# _2eaf8d491417924c
+    button $bs.disconnect -font [dynafont -size 12] -compound left -image [img load 24/disconnect] -text [_ "Disconnect"] -command [list go ClickDisconnect] ;# _87fff3af45753920
     button $bs.slist -font [dynafont -size 12] -compound left -image [img load 24/servers] -text [_ "Servers"] -command ServerListClicked ;# _bf9c42ec59d68714
     grid $bs.connect -row 0 -column 0 -padx 10 -sticky w
     grid $bs.disconnect -row 0 -column 1 -padx 10 -sticky w
@@ -2035,6 +2013,15 @@ proc OptionsClicked {} {
     
         grid $nb.connection.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.connection.buttons.down -row 1 -sticky nwe -pady {0 10}
+
+        frame $nb.connection.timeout
+        label $nb.connection.timeout.lbl -text "Connection timeout \[sec\]" -anchor w
+        set ::model::Gui_openvpn_connection_timeout $::model::openvpn_connection_timeout
+        scale $nb.connection.timeout.scale -orient horizontal -from 5 -to 40 -tickinterval 10 -resolution 5 -variable ::model::Gui_openvpn_connection_timeout
+        grid $nb.connection.timeout.lbl -row 0 -column 0 -sticky news -padx 10 
+        grid $nb.connection.timeout.scale -row 0 -column 1 -sticky news -padx 10
+        grid columnconfigure $nb.connection.timeout 0 -weight 1
+        grid columnconfigure $nb.connection.timeout 1 -weight 3
     
         $ppl column #0 -width 30 -anchor w -stretch 0
         $ppl column 0 -width 100 -anchor w
@@ -2052,6 +2039,7 @@ proc OptionsClicked {} {
         grid $ppl -row 3 -column 0 -sticky news -padx 10 -pady 10
         grid $nb.connection.buttons -row 3 -column 1 -sticky nw -padx 10 -pady 10
         grid $nb.connection.panel -row 3 -column 2 -sticky news -padx 10 -pady 10
+        grid $nb.connection.timeout -row 5 -columnspan 3 -sticky news -padx 10 -pady {0 20}
     
         grid columnconfigure $nb.connection 2 -weight 1
     
@@ -2150,6 +2138,7 @@ proc OptionsClicked {} {
                 # repaint profile tabset
                 tabset-profiles .c.tabsetenvelope
             }
+            set ::model::openvpn_connection_timeout $::model::Gui_openvpn_connection_timeout
         }
         destroy $w
     } on error {e1 e2} {
@@ -2630,78 +2619,92 @@ proc ffconn-close {} {
     catch {close $::model::Ffconn_sock}
 }
 
-
 proc ffread {} {
-    set sock $::model::Ffconn_sock
-    if {[gets $sock line] < 0} {
-        if {[eof $sock]} {
-            log "ffread_sock EOF. Connection terminated"
-            ffconn-close
+    try {
+        set sock $::model::Ffconn_sock
+        if {[gets $sock line] < 0} {
+            if {[eof $sock]} {
+                log "ffread_sock EOF. Connection terminated"
+                ffconn-close
+            }
+            return
+        } else {
+            #!!! using internal csp function - unconditional sending to the channel
+            csp::CAppend $::model::Chan_ffread $line
+            csp::SetResume
         }
-        return
+    } on error {e1 e2} {
+        puts stderr [log $e1 $e2]
     }
-    switch -regexp -matchvar tokens $line {
-        {^ctrl: (.*)$} {
-            puts stderr [log OPENVPN CTRL: [lindex $tokens 1]]
-            switch -regexp -matchvar details [lindex $tokens 1] {
-                {^Config loaded} {
-                    ffwrite start
-                }
-                {^version (\S+) (.*)$} {
-                    set daemon_version [lindex $details 1]
-                    puts stderr "DAEMON VERSION: $daemon_version"
-                    puts stderr "FRUHO CLIENT VERSION: [build-version]"
-                    # fruho client to restart itself if daemon already upgraded and not too often
-                    if {[int-ver $daemon_version] > [int-ver [build-version]]} {
-                        set sha [sha1sum [this-binary]]
-                        # just restart itself from the new binary - daemon should have replaced it
-                        # restart only if different binaries
-                        if {$sha ne $::model::Running_binary_fingerprint} {
-                            model save
-                            execl [this-binary]
+}
+
+proc ffread-loop {} {
+    try {
+        while 1 {
+            set line [<- $::model::Chan_ffread]
+            switch -regexp -matchvar tokens $line {
+                {^ctrl: (.*)$} {
+                    puts stderr [log OPENVPN CTRL: [lindex $tokens 1]]
+                    switch -regexp -matchvar details [lindex $tokens 1] {
+                        {^Config loaded} {
+                            ffwrite start
+                        }
+                        {^version (\S+) (.*)$} {
+                            set daemon_version [lindex $details 1]
+                            puts stderr "DAEMON VERSION: $daemon_version"
+                            puts stderr "FRUHO CLIENT VERSION: [build-version]"
+                            # fruho client to restart itself if daemon already upgraded and not too often
+                            if {[int-ver $daemon_version] > [int-ver [build-version]]} {
+                                set sha [sha1sum [this-binary]]
+                                # just restart itself from the new binary - daemon should have replaced it
+                                # restart only if different binaries
+                                if {$sha ne $::model::Running_binary_fingerprint} {
+                                    model save
+                                    execl [this-binary]
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-        {^ovpn: (.*)$} {
-            set ::model::OvpnServerLog [lindex $tokens 1]
-            puts stderr [log OPENVPN LOG: $::model::OvpnServerLog]
-            switch -regexp -matchvar details [lindex $tokens 1] {
-                {^Initialization Sequence Completed} {
+                {^ovpn: (.*)$} {
+                    set ::model::OvpnServerLog [lindex $tokens 1]
+                    puts stderr [log OPENVPN LOG: $::model::OvpnServerLog]
+                    switch -regexp -matchvar details [lindex $tokens 1] {
+                        {^Initialization Sequence Completed} {
+                        }
+                    }
+                }
+                {^stat: (.*)$} {
+                    set stat [dict create {*}[lindex $tokens 1]]
+                    set ::model::Ffconn_beat [clock milliseconds]
+                    set ovpn_config [dict-pop $stat ovpn_config {}]
+                    set proto [lindex [ovconf get $ovpn_config --proto] 0]
+                    set port [lindex [lindex [ovconf get $ovpn_config --remote] 0] 1]
+                    set ::model::Current_protoport [list $proto $port]
+                    set meta [lindex [ovconf get $ovpn_config --meta] 0]
+                    if {$meta ne ""} {
+                        set ::model::Current_sitem $meta
+                        set profileid [dict-pop $meta profile {}]
+                        set trafficup [dict-pop $stat mgmt_rwrite 0]
+                        set trafficdown [dict-pop $stat mgmt_rread 0]
+                        traffic-speed-store $trafficup $trafficdown
+        
+                        if {[is-connecting-status] && [current-profile] eq $profileid} {
+                            dash-gauge-update
+                        }
+                    }
+                    #puts stderr "stat: $stat"
+                    #puts stderr "ovpn_config: $ovpn_config"
+                    #puts stderr "meta: $meta"
+
+                    $::model::Chan_stat_report <- [connstatus-reported $stat]
                 }
             }
+            log fruhod>> $line
         }
-        {^stat: (.*)$} {
-            set stat [dict create {*}[lindex $tokens 1]]
-            set ::model::Ffconn_beat [clock milliseconds]
-            set ovpn_config [dict-pop $stat ovpn_config {}]
-            set proto [lindex [ovconf get $ovpn_config --proto] 0]
-            set port [lindex [lindex [ovconf get $ovpn_config --remote] 0] 1]
-            set ::model::Current_protoport [list $proto $port]
-            set meta [lindex [ovconf get $ovpn_config --meta] 0]
-            if {$meta ne ""} {
-                set ::model::Current_sitem $meta
-                set profileid [dict-pop $meta profile {}]
-                set trafficup [dict-pop $stat mgmt_rwrite 0]
-                set trafficdown [dict-pop $stat mgmt_rread 0]
-                traffic-speed-store $trafficup $trafficdown
-
-                if {[is-connecting-status] && [current-profile] eq $profileid} {
-                    dash-gauge-update
-                }
-            }
-            #puts stderr "stat: $stat"
-            #puts stderr "ovpn_config: $ovpn_config"
-            #puts stderr "meta: $meta"
-
-            conn-status-update $stat
-            #TODO heartbeat timeout
-            #connstatus update trigger
-
-        }
+    } on error {e1 e2} {
+        puts stderr [log $e1 $e2]
     }
-    log fruhod>> $line
 }
 
 
@@ -2777,13 +2780,18 @@ proc select-protoport-ovs {sitem} {
 }
 
 
+proc ClickDisconnect {} {
+    try {
+        $::model::Chan_button_disconnect <- 1
+    } on error {e1 e2} {
+        log "$e1 $e2"
+    }
+}
+
+
 proc ClickConnect {} {
     try {
         set profile [current-profile]
-        # immediately disable button to prevent double-click
-        set ::model::Connstatus_enforced connecting
-        after 1500 [list set ::model::Connstatus_enforced ""]
-
 
         # temporary set Current_sitem - it will be overwritten by meta info received back from daemon
         set planid [current-planid [model now] $profile]
@@ -2798,7 +2806,6 @@ proc ClickConnect {} {
         set ::model::Current_protoport [select-protoport-ovs $::model::Current_sitem]
         lassign $::model::Current_protoport proto port
 
-        #TODO not really append, it's rather replace
         #TODO handle inline certs and keys
         set cert [ovconf get $localconf --cert]
         if {$cert eq ""} {
@@ -2813,30 +2820,107 @@ proc ClickConnect {} {
             set localconf [ovconf cset $localconf --ca [ovpndir $profile ca.crt]]
         }
 
-        append localconf " --proto $proto --remote $ip $port --meta $::model::Current_sitem "
+        set localconf [ovconf cset $localconf --proto $proto]
+        set localconf [ovconf cset $localconf --remote "$ip $port"]
+        set localconf [ovconf cset $localconf --meta $::model::Current_sitem]
         puts stderr [log localconf: $localconf]
         ffwrite "config $localconf"
-        gui-update
+        $::model::Chan_button_connect <- 1
     } on error {e1 e2} {
-        log "$e1 $e2"
+        puts stderr [log "$e1 $e2"]
     }
 }
 
-proc ClickDisconnect {} {
+
+proc connstatus-loop {} {
     try {
-        # immediately disable button to prevent double-click
-        set ::model::Connstatus_enforced disconnected
-        after 1500 [list set ::model::Connstatus_enforced ""]
-        trigger-geo-loc 1000
-        set Previous_trafficup {}
-        set Previous_trafficdown {}
-        set Previous_traffic_tstamp {}
-        gui-update
-        ffwrite stop
+        channel empty_channel
+        set chtimeout $empty_channel
+        while 1 {
+            # TODO possibly one more source of events here: openvpn logs
+            select {
+                <- $::model::Chan_button_disconnect {
+                    <- $::model::Chan_button_disconnect
+                    pq 43 disconnect
+                    connection-windup
+                    set ::model::Connstatus disconnected
+                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    # this cancels the timeout
+                    set chtimeout $empty_channel
+                    gui-update
+                }
+                <- $::model::Chan_button_connect {
+                    <- $::model::Chan_button_connect
+                    pq 41 connect
+                    set ::model::Connstatus connecting
+                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
+                    gui-update
+                }
+                <- $::model::Chan_stat_report {
+                    set newstatus [<- $::model::Chan_stat_report]
+                    # ignore stat report connstatus if it confirms current Connstatus
+                    if {$newstatus ne $::model::Connstatus} {
+                        # the stat report is the ultimate source of truth about connstatus BUT it may out of date so consider it only after a delay since last change
+                        if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 2000} {
+                            pq 77 $newstatus
+                            set ::model::Connstatus $newstatus
+                            set ::model::Connstatus_change_tstamp [clock milliseconds]
+                            if {$newstatus eq "connected"} {
+                                trigger-geo-loc 1000
+                                # this cancels the timeout
+                                set chtimeout $empty_channel
+                            }
+                            gui-update
+                        }
+                    }
+                }
+                <- $chtimeout {
+                    <- $chtimeout
+                    pq 42 timeout
+                    set ::model::Connstatus timeout
+                    set ::model::Connstatus_change_tstamp [clock milliseconds]
+                    connection-windup
+                    gui-update
+                }
+            }
+        }
     } on error {e1 e2} {
-        log "$e1 $e2"
+        puts stderr [log $e1 $e2]
     }
 }
+
+
+# Extract new OpenVPN connstatus from fruhod stat report
+# Returns possible values: unknown, disconnected, connected, connecting
+proc connstatus-reported {stat} {
+    if {$stat eq ""} {
+        set connstatus unknown
+    } elseif {[dict get $stat ovpn_pid] == 0} {
+        set connstatus disconnected
+    # model::mgmt_connstatus may store stale value - it is valid only when ovpn_pid is not zero
+    } elseif {[dict get $stat mgmt_connstatus] eq "CONNECTED"} {
+        set connstatus connected
+    } else {
+        set connstatus connecting
+    }
+    return $connstatus
+}
+
+proc effective-connstatus {} {
+    return $::model::Connstatus
+}
+
+
+proc connection-windup {} {
+    trigger-geo-loc 1000
+    set Previous_trafficup {}
+    set Previous_trafficdown {}
+    set Previous_traffic_tstamp {}
+    ffwrite stop
+}
+
+
 
 
 proc trigger-geo-loc {{delay 0}} {

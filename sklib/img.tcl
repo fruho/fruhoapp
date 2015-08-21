@@ -63,7 +63,7 @@ proc ::img::load {imgptr} {
     return $imgobj
 }
 
-proc ::img::place {imgptr lbl {imgptr_default "default.png"}} {
+proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
     if {![::img::exists $imgptr]} {
         set imgptr $imgptr_default
     }
