@@ -1101,14 +1101,14 @@ proc connect-msg-stand {} {
         cancelled        {set msg [_ "Disconnected"]}
         connecting      {
             if {$city ne "" && $ccode ne ""} {
-                set msg [_ "Connecting to {0}, {1}, port {2}" $city $ccode $::model::Current_protoport]
+                set msg [_ "Connecting to {0}, {1}" $city $ccode]
             } else {
                 set msg [_ "Connecting"]
             }
         }
         connected       {
             if {$city ne "" && $ccode ne ""} {
-                set msg [_ "Connected to {0}, {1}, port {2}" $city $ccode $::model::Current_protoport]
+                set msg [_ "Connected to {0}, {1}" $city $ccode]
             } else {
                 set msg [_ "Connected"]
             }
