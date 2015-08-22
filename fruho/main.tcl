@@ -2197,16 +2197,32 @@ proc OptionsClicked {} {
                 lappend ::model::protoport_order [lindex [$ppl item $ppitem -values] 0]
             }
 
-            set original_profs [model active-profiles]
-            set remaining_profs [$profl children {}]
-            if {[llength $original_profs] != [llength $remaining_profs]} {
-                foreach profileid [ldiff $original_profs $remaining_profs] {
-                    lappend ::model::removed_profiles $profileid
-                }
-                set ::model::removed_profiles [lunique $::model::removed_profiles]
-                # repaint profile tabset
-                tabset-profiles .c.tabsetenvelope
+            
+            set temp [dict create]
+            set gui_profs [$profl children {}]
+            foreach profileid $gui_profs {
+                dict set temp $profileid [dict get $::model::Profiles $profileid]
             }
+            set ::model::removed_profiles [lunique [ldiff [dict keys $::model::Profiles] $gui_profs]]
+            foreach profileid $::model::removed_profiles {
+                dict set temp $profileid [dict get $::model::Profiles $profileid]
+            }
+            set ::model::Profiles $temp
+            # repaint profile tabset
+            tabset-profiles .c.tabsetenvelope
+
+
+#               set original_profs [model active-profiles]
+#               set remaining_profs [$profl children {}]
+#               if {[llength $original_profs] != [llength $remaining_profs]} {
+#                   foreach profileid [ldiff $original_profs $remaining_profs] {
+#                       lappend ::model::removed_profiles $profileid
+#                   }
+#                   set ::model::removed_profiles [lunique $::model::removed_profiles]
+#                   # repaint profile tabset
+#                   tabset-profiles .c.tabsetenvelope
+#               }
+#   
             set ::model::openvpn_connection_timeout $::model::Gui_openvpn_connection_timeout
         }
         destroy $w
