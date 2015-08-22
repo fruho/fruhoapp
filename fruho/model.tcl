@@ -21,6 +21,8 @@ namespace eval ::model {
     variable CONFIGDIR [file join $HOME .fruho]
     variable INIFILE [file join $CONFIGDIR fruho.ini]
     variable LOGFILE [file join $CONFIGDIR fruho.log]
+    variable OPENVPNLOGFILE [file join $CONFIGDIR openvpn.log]
+    variable OPENVPNLOG ""
     variable PROFILEDIR [file join $CONFIGDIR profile]
     variable UPGRADEDIR [file join $CONFIGDIR upgrade]
     variable CADIR [file join $CONFIGDIR certs]
@@ -50,9 +52,6 @@ namespace eval ::model {
     # latest fruho version to upgrade from check-for-updates
     variable Latest_version 0
 
-
-    # Last line of log received from fruhod/openvpn server with ovpn prefix
-    variable OvpnServerLog ""
 
     # The built-in interim profile Fruho
     # while profile may contain multiple plans/slists, we need to store current slist as well since it depends on current time (through active plan selection)

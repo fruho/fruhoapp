@@ -190,6 +190,7 @@ proc main {} {
     
         set ::model::Running_binary_fingerprint [sha1sum [this-binary]]
     
+        set ::model::OPENVPNLOG [open $::model::OPENVPNLOGFILE w]
         in-ui main
         daemon-monitor
         go ffread-loop
@@ -208,6 +209,7 @@ proc main-exit {{arg ""}} {
     delete-pidfile ~/.fruho/fruho.pid
     set ::until_exit 1
     catch {close [$::model::Ffconn_sock}
+    catch {close $::model::OPENVPNLOG}
     catch {destroy .}
     exit
 }
@@ -326,13 +328,11 @@ proc main-gui {} {
         bind . <Control-w> main-exit
         bind . <Control-q> main-exit
     
-        #grid [ttk::label .statusline -textvariable ::model::OvpnServerLog]
-
         frame .mainstatusline
         label .mainstatusline.msg
         label .mainstatusline.spin
         img place 16/empty .mainstatusline.spin
-        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize $::model::LOGFILE] &]
+        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize $::model::OPENVPNLOGFILE] &]
         grid .mainstatusline.msg .mainstatusline.spin .mainstatusline.link -padx 5
         grid .mainstatusline -sticky news -padx 10
 
@@ -2753,8 +2753,10 @@ proc ffread-loop {} {
                     }
                 }
                 {^ovpn: (.*)$} {
-                    set ::model::OvpnServerLog [lindex $tokens 1]
-                    puts stderr [log OPENVPN LOG: $::model::OvpnServerLog]
+                    catch {
+                        puts $::model::OPENVPNLOG [lindex $tokens 1]
+                        flush $::model::OPENVPNLOG
+                    }
                     switch -regexp -matchvar details [lindex $tokens 1] {
                         {^Initialization Sequence Completed} {
                         }
@@ -2911,6 +2913,10 @@ proc ClickConnect {} {
         set localconf [ovconf cset $localconf --meta $::model::Current_sitem]
         puts stderr [log localconf: $localconf]
         ffwrite "config $localconf"
+
+        # append newlines to openvpn log for better readability
+        puts $::model::OPENVPNLOG "\n\n"
+
         $::model::Chan_button_connect <- 1
     } on error {e1 e2} {
         puts stderr [log "$e1 $e2"]
