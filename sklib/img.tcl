@@ -74,9 +74,14 @@ proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
         set imgptr $imgptr_default
     }
     # sort of caching to prevent anigifs flickering when unnecessarily updated 
-    if {[dict exists $anigif_lbl2img $lbl] && [dict get $anigif_lbl2img $lbl] eq $imgptr} {
-        # do nothing if that image is already on that lbl
-        return
+    if {[dict exists $anigif_lbl2img $lbl]} {
+        if {[dict get $anigif_lbl2img $lbl] eq $imgptr} {
+            # do nothing if that image is already on that lbl
+            return
+        } else {
+            # must be a different image so clear cache
+            dict unset anigif_lbl2img $lbl
+        }
     }
     anigif::stop $lbl
     if {[::img::ext $imgptr] eq ".gif"} {

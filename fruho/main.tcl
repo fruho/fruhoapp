@@ -326,7 +326,17 @@ proc main-gui {} {
         bind . <Control-w> main-exit
         bind . <Control-q> main-exit
     
-        grid [ttk::label .statusline -textvariable ::model::OvpnServerLog]
+        #grid [ttk::label .statusline -textvariable ::model::OvpnServerLog]
+
+        frame .mainstatusline
+        label .mainstatusline.msg
+        label .mainstatusline.spin
+        img place 16/empty .mainstatusline.spin
+        hyperlink .mainstatusline.link -command [list launchBrowser "https://fruho.com/geo"]
+        grid .mainstatusline.msg .mainstatusline.spin .mainstatusline.link -padx 5
+        grid .mainstatusline -sticky news -padx 10
+
+
         # sizegrip - bottom-right corner for resize
         grid [ttk::sizegrip .grip] -sticky se
     
@@ -344,6 +354,63 @@ proc main-gui {} {
         puts stderr [log $e1 $e2]
     }
 }
+
+# both update the model and view
+proc mainstatusline-update {stat} {
+
+    set value ""
+    #set connstatus [connstatus-reported $stat]
+    set connstatus [model connstatus]
+    set ::model::Mainstatusline_spin empty
+    if {$connstatus eq "connecting"} {
+        set phase [dict-pop $stat mgmt_connstatus ""]
+        if {$phase eq ""} {
+            set phase START
+            set value $::model::Current_protoport
+        }
+        if {$phase eq "ASSIGN_IP"} {
+            set value [dict-pop $stat mgmt_vip ""]
+        }
+        dict set ::model::Mainstatusline $phase $value
+        set ::model::Mainstatusline_spin spin
+        set ::model::Mainstatusline_last ""
+        set ::model::Mainstatusline_link ""
+    } elseif {$connstatus eq "connected"} {
+        dict set ::model::Mainstatusline CONNECTED ""
+        set ::model::Mainstatusline_last ""
+        set ::model::Mainstatusline_link ""
+    } elseif {$connstatus eq "timeout"} {
+        dict set ::model::Mainstatusline TIMEOUT ""
+        set ::model::Mainstatusline_last "Last connection timed out. Consider increasing timeout in settings."
+        set ::model::Mainstatusline_link "see logs"
+    } elseif {$connstatus eq "cancelled"} {
+        dict set ::model::Mainstatusline CANCELLED ""
+        set ::model::Mainstatusline_link ""
+    } elseif {$connstatus eq "unknown"} {
+        set ::model::Mainstatusline [dict create]
+        set ::model::Mainstatusline_link ""
+        set ::model::Mainstatusline_last "No connection to fruho daemon. Try to restart fruhod service."
+    } else {
+        set ::model::Mainstatusline [dict create]
+    }
+
+    if {$::model::Mainstatusline ne ""} {
+        set msg ""
+        dict for {k v} $::model::Mainstatusline {
+            if {$msg ne ""} {
+                append msg " --- "
+            }
+            append msg "$k $v"
+        }
+    } else {
+        set msg $::model::Mainstatusline_last
+    }
+        
+    .mainstatusline.msg configure -text $msg
+    img place 16/$::model::Mainstatusline_spin .mainstatusline.spin
+    .mainstatusline.link configure -text $::model::Mainstatusline_link
+}
+
 
 
 proc check-for-updates {uframe} {
@@ -969,6 +1036,7 @@ proc connect-button-stand {} {
         connecting {set state disabled}
         connected {set state disabled}
         timeout {set state disabled}
+        cancelled {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -992,6 +1060,7 @@ proc disconnect-button-stand {} {
         connecting {set state normal}
         connected {set state normal}
         timeout {set state disabled}
+        cancelled {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1029,6 +1098,7 @@ proc connect-msg-stand {} {
         unknown         {set msg [_ "Unknown"]}
         disconnected    {set msg [_ "Disconnected"]}
         timeout         {set msg [_ "Disconnected"]}
+        cancelled        {set msg [_ "Disconnected"]}
         connecting      {
             if {$city ne "" && $ccode ne ""} {
                 set msg [_ "Connecting to {0}, {1}, port {2}" $city $ccode $::model::Current_protoport]
@@ -1063,12 +1133,11 @@ proc externalip-stand {} {
 # - to avoid gauge flickering - it should be updated at regular intervals
 proc gui-update {} {
     try {
-        pq 88 [connect-image-stand]
         img place 32/status/[connect-image-stand] .c.stat.imagestatus
         img place 64/flag/[connect-flag-stand] .c.stat.flag 64/flag/EMPTY
         set externalip [externalip-stand]
         if {$externalip eq ""} {
-            img place 16/connecting .c.inf.externalip
+            img place 16/spin .c.inf.externalip
             .c.inf.externalip configure -text "                  "
         } else {
             img place 16/empty .c.inf.externalip
@@ -2589,6 +2658,7 @@ proc daemon-monitor {} {
         log "Heartbeat not received within last 3 seconds. Restarting connection."
         model connstatus unknown
         gui-update
+        mainstatusline-update ""
         ffconn-close
         daemon-connect 7777
     }
@@ -2840,10 +2910,11 @@ proc connstatus-loop {} {
             # TODO possibly one more source of events here: openvpn logs
             select {
                 <- $::model::Chan_button_disconnect {
+                    # this is really cancelled status
                     <- $::model::Chan_button_disconnect
                     pq 43 disconnect
                     connection-windup
-                    model connstatus disconnected
+                    model connstatus cancelled
                     # this cancels the timeout
                     set chtimeout $empty_channel
                     gui-update
@@ -2873,6 +2944,7 @@ proc connstatus-loop {} {
                             gui-update
                         }
                     }
+                    mainstatusline-update $stat
                 }
                 <- $chtimeout {
                     <- $chtimeout
@@ -2906,10 +2978,10 @@ proc connstatus-reported {stat} {
 }
 
 proc connection-windup {} {
+    set ::model::Previous_trafficup {}
+    set ::model::Previous_trafficdown {}
+    set ::model::Previous_traffic_tstamp {}
     trigger-geo-loc 1000
-    set Previous_trafficup {}
-    set Previous_trafficdown {}
-    set Previous_traffic_tstamp {}
     ffwrite stop
 }
 

@@ -112,10 +112,14 @@ if 0 {    variable Profiles [dict create fruho {
 
     variable Geo_loc ""
 
+    variable Mainstatusline [dict create]
+    variable Mainstatusline_spin empty
+    variable Mainstatusline_link ""
+    variable Mainstatusline_last ""
 
     # OpenVPN connection status as reported by fruhod/openvpn stat reports
     # Although the source of truth for connstatus is fruhod stat reports (but it is not always up-to-date)
-    # we keep local copy to know when to update display
+    # we keep local copy to know when to update display and include extra states (timeout, cancelled)
     variable Connstatus unknown
     variable Connstatus_change_tstamp 0
 
@@ -181,9 +185,14 @@ proc ::model::active-profiles {} {
 
 proc ::model::connstatus {args} {
     if {[llength $args] == 1} {
-        # unknown status can be immediately overwritten so while setting unknown status reset last change tstamp to 0 so that stat report does not need to delay update
         set newstatus [lindex $args 0]
+        # when changing from unknown to not-unknown status clear the mainstatusline last message
+        if {$::model::Connstatus eq "unknown" && $newstatus ne "unknown"} {
+            set ::model::Mainstatusline_last ""
+            set ::model::Mainstatusline_link ""
+        }
         set ::model::Connstatus $newstatus
+        # unknown status can be immediately overwritten so while setting unknown status reset last change tstamp to 0 so that stat report does not need to delay update
         if {$newstatus ne "unknown"} {
             set ::model::Connstatus_change_tstamp [clock milliseconds]
         }

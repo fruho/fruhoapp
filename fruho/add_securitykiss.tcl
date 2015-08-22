@@ -85,7 +85,7 @@ proc ::securitykiss::ImportClicked {tab} {
         set profileid [name2id $newprofilename]
 
         set pconf $tab.$name
-        img place 24/connecting $pconf.importline.img
+        img place 24/spin $pconf.importline.img
         $pconf.importline.msg configure -text "Importing configuration from $dispname"
         $pconf.importline.button configure -state disabled
     
