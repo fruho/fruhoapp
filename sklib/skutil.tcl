@@ -703,6 +703,25 @@ proc dict-move {d from to} {
 } 
 
 
+# sort list of dictionaries by given keys
+# l - list of dictionaries to sort
+# keys - list of keys by which to sort
+proc lsort-dict {l keys} {
+    # create a new list of [list $sortkey $dict] so we can use lsort
+    set newlist {}
+    foreach d $l {
+        set sortkey {}
+        foreach k $keys {
+            lappend sortkey [dict-pop $d $k ""]
+        }
+        lappend newlist [list $sortkey $d]
+    }
+    set sortednewlist [lsort -index 0 $newlist]
+    # get rid of sortkey
+    set result [lmap ll $sortednewlist {lindex $ll 1}]
+    return $result
+}
+
 
 
 

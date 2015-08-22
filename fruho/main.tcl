@@ -2416,7 +2416,10 @@ proc ServerListClicked {} {
         $wt column 1 -width 140 -anchor w
         $wt column 2 -width 140 -anchor w
         
-        foreach sitem $slist {
+
+        set sorted_slist [lsort-dict $slist {country city}]
+
+        foreach sitem $sorted_slist {
             set id [dict get $sitem id]
             set ccode [dict get $sitem ccode]
             if {$ccode eq ""} {
