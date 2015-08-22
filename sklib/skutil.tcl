@@ -660,6 +660,51 @@ proc isdict {v} {
 } 
 
 
+# return a new dictionary with changed order of items
+# element in position 'from' is moved to position 'to'
+proc dict-move {d from to} {
+    set size [dict size $d]
+    if {$from < 0 || $to < 0} {
+        error "dict-move index must be positive: $from $to"
+    }
+    if {$from >= $size || $to >= $size} {
+        error "dict-move index must be below  $size: $from $to\ndict: $d"
+    }
+
+    set res [dict create]
+    set i 0
+    set fromitem {}
+    dict for {k v} $d {
+        if {$from == $i} {
+            set fromitem [list $k $v]
+            break
+        }
+        incr i
+    }
+
+    set oldi 0
+    set newi 0
+    dict for {k v} $d {
+        if {$to == $newi} {
+            dict set res [lindex $fromitem 0] [lindex $fromitem 1]
+            incr newi
+        }
+        if {$from != $oldi} {
+            dict set res $k $v
+            incr newi
+            if {$to == $newi} {
+                dict set res [lindex $fromitem 0] [lindex $fromitem 1]
+                incr newi
+            }
+        }
+        incr oldi
+    }
+    return $res
+} 
+
+
+
+
 
 proc string-insert {s pos insertion} {
     append insertion [string index $s $pos]
