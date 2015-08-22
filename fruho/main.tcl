@@ -2857,7 +2857,7 @@ proc connstatus-loop {} {
                 }
                 <- $::model::Chan_stat_report {
                     set stat [<- $::model::Chan_stat_report]
-                    pq 333 $stat
+                    #pq 333 $stat
                     set newstatus [connstatus-reported $stat]
                     # ignore stat report connstatus if it confirms current Connstatus
                     if {$newstatus ne [model connstatus]} {

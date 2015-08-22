@@ -5,6 +5,8 @@ package require anigif
 namespace eval ::img {
     namespace export *
     namespace ensemble create
+    # we keep a map lbl => img to prevent overwriting anigifs on unecessary img place
+    variable anigif_lbl2img [dict create]
 }
 
 
@@ -63,23 +65,29 @@ proc ::img::load {imgptr} {
     return $imgobj
 }
 
+
+# we keep a map lbl => img:
+# - do nothing when trying to place already placed image on the same label
 proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
+    variable anigif_lbl2img
     if {![::img::exists $imgptr]} {
         set imgptr $imgptr_default
+    }
+    # sort of caching to prevent anigifs flickering when unnecessarily updated 
+    if {[dict exists $anigif_lbl2img $lbl] && [dict get $anigif_lbl2img $lbl] eq $imgptr} {
+        # do nothing if that image is already on that lbl
+        return
     }
     anigif::stop $lbl
     if {[::img::ext $imgptr] eq ".gif"} {
         # must use non-ttk label $lbl for proper animated gif display
         if {[winfo class $lbl] eq "Label"} {
             anigif::anigif [::img::path $imgptr] $lbl
+            dict set anigif_lbl2img $lbl $imgptr
         } else {
             error "img::place: You should use plain label (not ttk::label) to display animated gif"
         }
     } else {
         $lbl configure -image [::img::load $imgptr]
     }
-}
-
-proc ::img::unplace {lbl} {
-    anigif::stop $lbl
 }
