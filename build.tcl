@@ -31,7 +31,7 @@
 proc base-ver {arch} {
     if {$arch eq "x86_64"} {
         return "8.6.3.1.298687"
-    } elseif {$arch eq "ix86"}
+    } elseif {$arch eq "ix86"} {
         return "8.6.3.1.298687"
     } else {
         error "Unrecognized arch $arch"
