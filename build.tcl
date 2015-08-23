@@ -130,13 +130,9 @@ prepare-lib sklib 0.0.0
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-#build-fruho linux ix86
-#build-fruhod linux ix86
-#build-deb-rpm ix86
-
-build-fruho linux x86_64
-#build-fruhod linux x86_64
-#build-deb-rpm x86_64
+build-fruho linux [this-arch]
+#build-fruhod linux [this-arch]
+#build-deb-rpm [this-arch]
 
 # sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb
 # sudo dpkg -i ./dist/linux-ix86/fruho_${::FRUHO_VERSION}_i386.deb
