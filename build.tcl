@@ -138,7 +138,7 @@ build-total
 #build-fruhod linux x86_64
 #build-deb-rpm x86_64
 
-# sudo dpkg -i ./dist/linux-x86_64/fruho_0.4.0_x86_64.deb
-# sudo dpkg -i ./dist/linux-ix86/fruho_0.4.0_i386.deb
+# sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb
+# sudo dpkg -i ./dist/linux-ix86/fruho_${::FRUHO_VERSION}_i386.deb
 
 exit
