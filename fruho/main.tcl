@@ -351,6 +351,7 @@ proc main-gui {} {
         package require tktray
         tktray::icon .systray -image [img load 16/logo] -docked 1 -visible 1
         .systray balloon "Fruho balloon" 5000
+        bind .systray <ButtonPress-3> [list pq 99999]
 
 
 
