@@ -62,7 +62,7 @@ proc build-fruho {os arch} {
     if {[file exists /usr/local/bin/fruho.bin]} {
         ex sudo mv /usr/local/bin/fruho.bin /tmp/fruho.bin-tmp
     }
-    ex sudo cp build/fruho/linux-x86_64/fruho.bin /usr/local/bin/fruho.bin
+    ex sudo cp build/fruho/linux-$arch/fruho.bin /usr/local/bin/fruho.bin
 }
 
 proc build-fruhod {os arch} {
@@ -76,7 +76,7 @@ proc build-fruhod {os arch} {
     if {[file exists /usr/local/sbin/fruhod.bin]} {
         ex sudo mv /usr/local/sbin/fruhod.bin /tmp/fruhod.bin-tmp
     }
-    ex sudo cp build/fruhod/linux-x86_64/fruhod.bin /usr/local/sbin/fruhod.bin
+    ex sudo cp build/fruhod/linux-$arch/fruhod.bin /usr/local/sbin/fruhod.bin
 
     ex sudo cp fruhod/exclude/etc/init.d/fruhod /etc/init.d/fruhod
     #ex sudo service fruhod restart
@@ -111,8 +111,8 @@ proc build-total {} {
         build-fruhod linux $arch_exact
         build-deb-rpm $arch_exact
     }
-    puts "Install from dpkg"
-    ex sudo dpkg -i ./dist/linux-x86_64/fruho_0.4.0_amd64.deb
+    #puts "Install from dpkg"
+    #ex sudo dpkg -i ./dist/linux-x86_64/fruho_0.4.0_amd64.deb
     #ex ./build/fruho/linux-ix86/fruho.bin
 }
 
