@@ -2956,7 +2956,6 @@ proc connstatus-loop {} {
                 <- $::model::Chan_button_disconnect {
                     # this is really cancelled status
                     <- $::model::Chan_button_disconnect
-                    pq 43 disconnect
                     connection-windup
                     model connstatus cancelled
                     # this cancels the timeout
@@ -2965,20 +2964,17 @@ proc connstatus-loop {} {
                 }
                 <- $::model::Chan_button_connect {
                     <- $::model::Chan_button_connect
-                    pq 41 connect
                     model connstatus connecting
                     timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
                     gui-update
                 }
                 <- $::model::Chan_stat_report {
                     set stat [<- $::model::Chan_stat_report]
-                    #pq 333 $stat
                     set newstatus [connstatus-reported $stat]
                     # ignore stat report connstatus if it confirms current Connstatus
                     if {$newstatus ne [model connstatus]} {
                         # the stat report is the ultimate source of truth about connstatus BUT it may be out of date so consider it only after a delay since last change
                         if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
-                            pq 77 $newstatus
                             model connstatus $newstatus
                             if {$newstatus eq "connected"} {
                                 trigger-geo-loc 1000
@@ -3002,7 +2998,6 @@ proc connstatus-loop {} {
                 }
                 <- $chtimeout {
                     <- $chtimeout
-                    pq 42 timeout
                     model connstatus timeout
                     connection-windup
                     gui-update
