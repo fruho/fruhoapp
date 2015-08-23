@@ -1858,7 +1858,7 @@ proc CheckForUpdatesClicked {uframe} {
     try {
         set about .options_dialog.nb.about
         $about.checkforupdates configure -state disabled
-        checkforupdates-status $uframe 16/connecting "Checking for updates"
+        checkforupdates-status $uframe 16/spin "Checking for updates"
         go check-for-updates $uframe
     } on error {e1 e2} {
         log "$e1 $e2"

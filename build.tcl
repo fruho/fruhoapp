@@ -125,7 +125,7 @@ set ::FRUHO_VERSION 0.0.2
 
 prepare-lib sklib 0.0.0
 
-build-total
+#build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
@@ -134,7 +134,7 @@ build-total
 #build-fruhod linux ix86
 #build-deb-rpm ix86
 
-#build-fruho linux x86_64
+build-fruho linux x86_64
 #build-fruhod linux x86_64
 #build-deb-rpm x86_64
 
