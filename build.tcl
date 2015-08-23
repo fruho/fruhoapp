@@ -34,7 +34,7 @@ proc base-ver {arch} {
     } elseif {$arch eq "ix86"} {
         return "8.6.3.1.298685"
     } else {
-        error "Unrecognized arch $arch"
+        error "base-ver unrecognized arch: $arch"
     }
 }
 
@@ -82,8 +82,7 @@ proc build-fruhod {os arch} {
     #ex sudo service fruhod restart
 }
 
-proc build-deb-rpm {arch_exact} {
-    set arch [generalize-arch $arch_exact]
+proc build-deb-rpm {arch} {
     puts "Building deb/rpm dist package"
     install-fpm
     if {$::tcl_platform(platform) eq "unix"} { 
@@ -98,26 +97,21 @@ proc build-deb-rpm {arch_exact} {
         file copy build/fruho/linux-$arch/fruho.bin $distdir/usr/local/bin/fruho.bin
         file copy fruho/exclude/fruho $distdir/usr/local/bin/fruho
         cd $distdir
-        set fpmopts "-a $arch_exact -s dir -n fruho -v 0.4.0 --before-install ../../fruhod/exclude/fruhod.preinst --after-install ../../fruhod/exclude/fruhod.postinst --before-remove ../../fruhod/exclude/fruhod.prerm --after-remove ../../fruhod/exclude/fruhod.postrm usr etc"
+        set fpmopts "-a [fpm-arch $arch] -s dir -n fruho -v $::FRUHO_VERSION --before-install ../../fruhod/exclude/fruhod.preinst --after-install ../../fruhod/exclude/fruhod.postinst --before-remove ../../fruhod/exclude/fruhod.prerm --after-remove ../../fruhod/exclude/fruhod.postrm usr etc"
         ex fpm -t deb {*}$fpmopts
         ex fpm -t rpm --rpm-autoreqprov {*}$fpmopts
         cd ../..
     } 
 }
 
-proc build-total {} {
-    foreach arch_exact {x86_64} {
-        build-fruho linux $arch_exact
-        build-fruhod linux $arch_exact
-        build-deb-rpm $arch_exact
-    }
-    #puts "Install from dpkg"
-    #ex sudo dpkg -i ./dist/linux-x86_64/fruho_0.4.0_amd64.deb
-    #ex ./build/fruho/linux-ix86/fruho.bin
-}
 
-proc release {} {
-    #TODO extract buildver.txt and use for release
+
+proc build-total {} {
+    foreach arch {x86_64 ix86} {
+        build-fruho linux $arch
+        build-fruhod linux $arch
+        build-deb-rpm $arch
+    }
 }
 
 proc test {} {
@@ -131,17 +125,20 @@ set ::FRUHO_VERSION 0.0.2
 
 prepare-lib sklib 0.0.0
 
-#build-total
+build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-build-fruho linux ix86
-build-fruhod linux ix86
-build-deb-rpm ix86
+#build-fruho linux ix86
+#build-fruhod linux ix86
+#build-deb-rpm ix86
 
 #build-fruho linux x86_64
 #build-fruhod linux x86_64
 #build-deb-rpm x86_64
+
+# sudo dpkg -i ./dist/linux-x86_64/fruho_0.4.0_x86_64.deb
+# sudo dpkg -i ./dist/linux-ix86/fruho_0.4.0_i386.deb
 
 exit

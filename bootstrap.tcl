@@ -80,6 +80,21 @@ proc install-fpm {} {
     }
 }
 
+
+
+#TODO test for rpms
+proc fpm-arch {arch} {
+    if {$arch eq "x86_64"} {
+        return x86_64
+    } elseif {$arch eq "ix86"} {
+        return i386
+    } else {
+        error "fpm-arch unrecognized arch: $arch"
+    }
+}
+
+
+
 # also in sklib
 proc unzip {zipfile {destdir .}} {
   set mntfile [vfs::zip::Mount $zipfile $zipfile]
