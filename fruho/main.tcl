@@ -391,6 +391,9 @@ proc mainstatusline-update {stat} {
         dict set ::model::Mainstatusline TIMEOUT ""
         set ::model::Mainstatusline_last "Last connection timed out. Consider increasing timeout in settings."
         set ::model::Mainstatusline_link "see logs"
+    } elseif {$connstatus eq "failed"} {
+        dict set ::model::Mainstatusline FAILED ""
+        set ::model::Mainstatusline_link "see logs"
     } elseif {$connstatus eq "cancelled"} {
         dict set ::model::Mainstatusline CANCELLED ""
         set ::model::Mainstatusline_link ""
@@ -1045,6 +1048,7 @@ proc connect-button-stand {} {
         connected {set state disabled}
         timeout {set state disabled}
         cancelled {set state disabled}
+        failed {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1069,6 +1073,7 @@ proc disconnect-button-stand {} {
         connected {set state normal}
         timeout {set state disabled}
         cancelled {set state disabled}
+        failed {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1106,7 +1111,8 @@ proc connect-msg-stand {} {
         unknown         {set msg [_ "Unknown"]}
         disconnected    {set msg [_ "Disconnected"]}
         timeout         {set msg [_ "Disconnected"]}
-        cancelled        {set msg [_ "Disconnected"]}
+        cancelled       {set msg [_ "Disconnected"]}
+        failed          {set msg [_ "Disconnected"]}
         connecting      {
             if {$city ne "" && $ccode ne ""} {
                 set msg [_ "Connecting to {0}, {1}" $city $ccode]
@@ -2761,6 +2767,11 @@ proc ffread-loop {} {
                                 }
                             }
                         }
+                        {^OpenVPN ERROR} {
+                            $::model::Chan_openvpn_fail <- [lindex $tokens 1]
+                            puts $::model::OPENVPNLOG [lindex $tokens 1]
+                            flush $::model::OPENVPNLOG
+                        }
                     }
                 }
                 {^ovpn: (.*)$} {
@@ -2977,6 +2988,16 @@ proc connstatus-loop {} {
                             gui-update
                         }
                     }
+                    mainstatusline-update $stat
+                }
+                <- $::model::Chan_openvpn_fail {
+                    set msg [<- $::model::Chan_openvpn_fail]
+                    set ::model::Mainstatusline_last "Last connection failed. [string range $msg 0 70]"
+                    connection-windup
+                    model connstatus failed
+                    # this cancels the timeout
+                    set chtimeout $empty_channel
+                    gui-update
                     mainstatusline-update $stat
                 }
                 <- $chtimeout {

@@ -137,6 +137,7 @@ if 0 {    variable Profiles [dict create fruho {
     csp::channel ::model::Chan_button_connect
     csp::channel ::model::Chan_button_disconnect
     csp::channel ::model::Chan_stat_report
+    csp::channel ::model::Chan_openvpn_fail
     csp::channel ::model::Chan_ffread
 
 

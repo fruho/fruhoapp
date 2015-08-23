@@ -227,12 +227,17 @@ proc ffread {} {
                     model reset-ovpn-state
                     set config [adjust-config $::model::ovpn_config]
                     set ovpncmd "openvpn $config"
-                    set chan [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
-                    set ::model::Start_pid [pid $chan]
-                    set ::model::Start_pid_tstamp [clock milliseconds]
-                    # this call is necessary to update ovpn_pid
-                    ovpn-pid
-                    ffwrite ctrl "OpenVPN with pid [ovpn-pid] started"
+                    try {
+                        set chan [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
+                        set ::model::Start_pid [pid $chan]
+                        set ::model::Start_pid_tstamp [clock milliseconds]
+                        # this call is necessary to update ovpn_pid
+                        ovpn-pid
+                        ffwrite ctrl "OpenVPN with pid [ovpn-pid] started"
+                    } on error {e1 e2} {
+                        ffwrite ctrl "OpenVPN ERROR: $e1"
+                        log $e1 $e2
+                    }
                     return
                 }
             }
