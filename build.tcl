@@ -43,9 +43,9 @@ proc copy-flags {countries {sizes {16 24 64}}} {
 proc build-fruho {os arch} {
     spit fruho/builddate.txt $::builddate
     spit fruho/buildver.txt $::FRUHO_VERSION
-    copy-flags {PL GB UK DE FR US EMPTY}
+    #copy-flags {PL GB UK DE FR US EMPTY}
     #build $os $arch fruho base-tk-8.6.3.1.298687 {sklib-0.0.0 Tkhtml-3.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 snit-2.3.2 doctools-1.4.19 textutil::expander-1.3.1}
-    build $os $arch fruho base-tk-8.6.3.1.298687 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2}
+    build $os $arch fruho base-tk-8.6.3.1.298687 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 
     # this is necessary to prevent "cp: cannot create regular file ‘/usr/local/sbin/fruho.bin’: Text file busy"
     if {[file exists /usr/local/bin/fruho.bin]} {
@@ -125,7 +125,11 @@ prepare-lib sklib 0.0.0
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-build-fruho linux x86_64
+
+#build linux ix86 fruho base-tk-8.6.3.1.298685 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+build linux ix86 fruho base-tcl-8.6.3.1.298685 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+
+#build-fruho linux x86_64
 #build-fruhod linux x86_64
 #build-deb-rpm x86_64
 

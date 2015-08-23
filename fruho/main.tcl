@@ -346,6 +346,14 @@ proc main-gui {} {
         grid rowconfigure .c .c.tabsetenvelope -weight 1
         bind . <Configure> [list MovedResized %W %x %y %w %h]
     
+
+
+        package require tktray
+        tktray::icon .systray -image [img load 16/logo]
+
+
+
+
         go get-welcome
         go faas-config-monitor
         go connstatus-loop

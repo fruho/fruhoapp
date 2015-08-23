@@ -258,7 +258,7 @@ proc teacup-fetch {os arch pkgname ver} {
             set tmpfile /tmp/teacup_fetch_[rand-big]
             set url http://teapot.activestate.com$tcpath/file
             puts stderr "Fetching url: $url"
-            set tok [http::geturl $url -channel [open $tmpfile w]]
+            set tok [http::geturl $url -channel [open $tmpfile w] -timeout 20000]
             upvar #0 $tok state
             if {[http::ncode $tok] == 200} {
                 array set meta [http::meta $tok]
