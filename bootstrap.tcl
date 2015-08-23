@@ -71,8 +71,9 @@ proc install-fpm {} {
         puts "Installing fpm"
         ex sudo apt-get update --fix-missing
         ex sudo apt-get -fy install git ruby-dev gcc rpm
-        #ex sudo apt-get -fy install rubygems
-        #ex sudo apt-get -fy install rubygems-integration
+        catch {ex sudo apt-get -fy install ruby1.8-dev}
+        ex sudo apt-get -fy install rubygems
+        ex sudo apt-get -fy install rubygems-integration
         ex sudo gem install fpm
     } else {
         puts "fpm already present"
