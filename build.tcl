@@ -28,6 +28,17 @@
 # Project must be built for this platform first!
 #run sample
 
+proc base-ver {arch} {
+    if {$arch eq "x86_64"} {
+        return "8.6.3.1.298687"
+    } elseif {$arch eq "ix86"}
+        return "8.6.3.1.298687"
+    } else {
+        error "Unrecognized arch $arch"
+    }
+}
+
+
 proc copy-flags {countries {sizes {16 24 64}}} {
     set from [file normalize ../images/flag/shiny]
     set to [file normalize ./fruho/images]
@@ -44,8 +55,8 @@ proc build-fruho {os arch} {
     spit fruho/builddate.txt $::builddate
     spit fruho/buildver.txt $::FRUHO_VERSION
     #copy-flags {PL GB UK DE FR US EMPTY}
-    #build $os $arch fruho base-tk-8.6.3.1.298687 {sklib-0.0.0 Tkhtml-3.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 snit-2.3.2 doctools-1.4.19 textutil::expander-1.3.1}
-    build $os $arch fruho base-tk-8.6.3.1.298687 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+    #build $os $arch fruho base-tk-[base-ver $arch] {sklib-0.0.0 Tkhtml-3.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 snit-2.3.2 doctools-1.4.19 textutil::expander-1.3.1}
+    build $os $arch fruho base-tk-[base-ver $arch] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 
     # this is necessary to prevent "cp: cannot create regular file ‘/usr/local/sbin/fruho.bin’: Text file busy"
     if {[file exists /usr/local/bin/fruho.bin]} {
@@ -57,7 +68,7 @@ proc build-fruho {os arch} {
 proc build-fruhod {os arch} {
     spit fruhod/builddate.txt $::builddate
     spit fruhod/buildver.txt $::FRUHO_VERSION
-    build $os $arch fruhod base-tk-8.6.3.1.298687 {sklib-0.0.0 Tclx-8.4}
+    build $os $arch fruhod base-tk-[base-ver $arch] {sklib-0.0.0 Tclx-8.4}
     #ex sudo service fruhod stop
 
     # this is necessary to prevent "cp: cannot create regular file ‘/usr/local/sbin/fruhod.bin’: Text file busy"
@@ -125,9 +136,9 @@ prepare-lib sklib 0.0.0
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-
-#build linux ix86 fruho base-tk-8.6.3.1.298685 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
-build linux ix86 fruho base-tcl-8.6.3.1.298685 {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+build-fruho linux ix86
+build-fruhod linux ix86
+build-deb-rpm ix86
 
 #build-fruho linux x86_64
 #build-fruhod linux x86_64
