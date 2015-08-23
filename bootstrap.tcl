@@ -72,7 +72,7 @@ proc install-fpm {} {
         ex sudo apt-get update --fix-missing
         catch {ex sudo apt-get remove ruby1.8}
         ex sudo apt-get -fy install git ruby1.9.1-full ruby-dev gcc rpm
-        ex sudo apt-get -fy install rubygems
+        catch {ex sudo apt-get -fy install rubygems}
         ex sudo apt-get -fy install rubygems-integration
         ex sudo gem install fpm
     } else {
