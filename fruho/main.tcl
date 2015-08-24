@@ -2163,7 +2163,7 @@ proc OptionsClicked {} {
         button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
         button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl $nb.profs]
         label $nb.profs.statusline -compound left -text " "
-        img place 24/empty $nb.profs.statusline
+        img place 16/empty $nb.profs.statusline
     
         grid $nb.profs.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.profs.buttons.down -row 1 -sticky nwe -pady {0 10}
@@ -2340,7 +2340,7 @@ proc ProfileUpdatePlan {tree tabframe} {
             return
         }
         set profilename [dict-pop $::model::Profiles $profileid profilename {}]
-        profile-update-plan-statusline $tabframe "Updating $profilename" 24/connecting disabled
+        profile-update-plan-statusline $tabframe "Updating $profilename" 16/spin disabled
 
         set result [vpapi-plans-direct $profilename [vpapi-host $profileid] [vpapi-port $profileid] [vpapi-path-plans $profileid]?[this-pcv] [vpapi-username $profileid] [vpapi-password $profileid]]
         set msg "Updated profile $profilename"
@@ -2352,7 +2352,7 @@ proc ProfileUpdatePlan {tree tabframe} {
             }
             puts stderr "updateplan msg: $msg"
         }
-        profile-update-plan-statusline $tabframe $msg 24/empty normal
+        profile-update-plan-statusline $tabframe $msg 16/empty normal
         after 3000 [list profile-update-plan-statusline $tabframe " " 24/empty normal]
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
