@@ -1102,6 +1102,10 @@ proc slist-button-stand {} {
     if {[is-addprovider-tab-selected]} {
         return disabled
     }
+    set slist [current-slist [model now] [current-profile]]
+    if {$slist eq ""} {
+        return disabled
+    }
     return normal
 }
 
