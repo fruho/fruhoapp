@@ -461,7 +461,7 @@ proc check-for-updates {uframe} {
 proc current-slist {tstamp profile} {
     #TODO temporary assertion
     if {[is-addprovider $profile]} {
-        fatal "profile in current-planid should not be $profile" 
+        fatal "profile in current-slist should not be $profile" 
     }
     set planid [current-planid $tstamp $profile]
     return [dict-pop $::model::Profiles $profile plans $planid slist {}]
@@ -489,7 +489,12 @@ proc current-planid {tstamp profile} {
     # sort by the second element of 2-elem tuples which is the actual plan
     set sorted_plans [lsort -stride 2 -index 1 -command [list plan-comparator $tstamp] $plans]
     set planid [lindex $sorted_plans 0]
-    return $planid
+    set plan [dict-pop $profiles $profile plans $planid {}]
+    if {[plan-is-active $tstamp $plan]} {
+        return $planid
+    } else {
+        return ""
+    }
 }
 
 
@@ -1046,6 +1051,10 @@ proc connect-button-stand {} {
     if {![is-cert-received [current-profile]] || ![is-config-received [current-profile]]} {
         return disabled
     }
+    set slist [current-slist [model now] [current-profile]]
+    if {$slist eq ""} {
+        return disabled
+    }
     set status [model connstatus]
     switch $status {
         unknown {set state disabled}
@@ -1466,19 +1475,24 @@ proc dash-plan-update {tstamp} {
 
     if {[winfo exists $dbplan]} {
         set planid [current-planid $tstamp $profileid]
-        set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
-        set planname [dict-pop $plan name UNKNOWN]
-        set plan_start [plan-start $plan]
-        set plan_end [plan-end $plan]
-        set until [format-date $plan_end]
-        set expires "Expires:"
-        set period [dict-pop $plan timelimit period day]
-        $dbplan.planname.val configure -text $planname
-        # if longer than 10 years
-        if {$plan_end - $plan_start > 315000000} {
+        if {$planid ne ""} {
+            set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
+            set planname [dict-pop $plan name UNKNOWN]
+            set plan_start [plan-start $plan]
+            set plan_end [plan-end $plan]
+            set until [format-date $plan_end]
+            set expires "Expires:"
+            # if longer than 10 years
+            if {$plan_end - $plan_start > 315000000} {
+                set until ""
+                set expires ""
+            }
+        } else {
+            set planname "No active plan"
             set until ""
             set expires ""
         }
+        $dbplan.planname.val configure -text $planname
         $dbplan.planexpiry.lbl configure -text $expires
         $dbplan.planexpiry.val configure -text $until
     }
@@ -2411,9 +2425,10 @@ proc protoport-list {} {
 #TODO sorting by country and favorites
 proc ServerListClicked {} {
     try {
+        set tstamp [model now]
         set profileid [current-profile]
-        set planid [current-planid [model now] $profileid]
-        set slist [model slist $profileid $planid]
+        set planid [current-planid $tstamp $profileid]
+        set slist [current-slist $tstamp $profileid]
         # we don't take selected_sitem_id directly from the model plan - give a chance to calculate/get random
         set ssitem [model selected-sitem $profileid $planid]
         set ssid [dict-pop $ssitem id {}]
