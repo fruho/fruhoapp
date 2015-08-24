@@ -348,6 +348,8 @@ proc main-gui {} {
     
 
 
+        # this works only on a few Linux desktops, does not work on Unity (appindicator)
+        # don't rely on systray icon
         package require tktray
         tktray::icon .systray -image [img load 16/logo] -docked 1 -visible 1
         .systray balloon "Fruho balloon" 5000
@@ -509,7 +511,9 @@ proc period-end {plan tstamp} {
 
 proc period-start {plan tstamp} {
     set period [dict-pop $plan timelimit period day]
-    if {$period eq "day"} {
+    if {$period eq "hour"} {
+        set periodsecs 3600
+    } elseif {$period eq "day"} {
         set periodsecs 86400
     } elseif {$period eq "month"} {
         # average number of seconds in a month
@@ -543,7 +547,7 @@ proc plan-end {plan} {
     set period [dict-pop $plan timelimit period day]
     set plan_start [plan-start $plan]
     set nop [dict-pop $plan timelimit nop 0]
-    #TODO make it work for period being in {day month <ms>}
+    #TODO make it work for period being in {hour day month <ms>}
     return [clock add $plan_start $nop $period]
 }
 
@@ -569,7 +573,7 @@ proc plan-comparator {tstamp a b} {
         return $active_diff
     }
     # use direct string compare - lexicographically day sorts before month
-    # TODO make it work for period being in {day month <ms>}
+    # TODO make it work for period being in {hour day month <ms>}
     set period_diff [string compare [dict-pop $b timelimit period day] [dict-pop $a timelimit period day]]
     if {$period_diff != 0} {
         return $period_diff

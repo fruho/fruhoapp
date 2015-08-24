@@ -121,16 +121,110 @@ proc test {} {
 }
 
 
-set ::FRUHO_VERSION 0.0.2
+
+
+proc parse-commits {commits} {
+    set commit2msg [dict create]
+    set prev ""
+    set commit ""
+    foreach line [split $commits \n] {
+        set line [string trim $line]
+        if {[regexp {commit ([0-9a-f]+)} $line _ commit]} {
+            puts "commit=$commit"
+        } elseif {$prev eq ""} {
+            dict set commit2msg $commit $line
+        }
+        set prev $line
+    }
+    puts "\n$commit2msg\n"
+    return $commit2msg
+}
+
+
+
+proc github-latest-release-date {} {
+    set latest_s [exec -ignorestderr curl https://api.github.com/repos/fruho/fruhoapp/releases/latest]
+    set latest [json::json2dict $latest_s]
+    set published_at [dict get $latest published_at]
+    return $published_at
+}
+
+proc github-create-release {gituser gitpass} {
+    set js1 "{\"tag_name\": \"fruho-$::FRUHO_VERSION\"}"
+    set created_release_s [exec -ignorestderr curl https://api.github.com/repos/fruho/fruhoapp/releases -XPOST -d$js1 -u "$gituser:$gitpass"]
+    puts "created_release_s: $created_release_s"
+    set created_release [json::json2dict $created_release_s]
+    set id [dict get $created_release id]
+    set upload_url [dict get $created_release upload_url]
+    puts "Release id: $id"
+    puts "Release upload_url: $upload_url"
+
+    #set id 1713418
+    #set upload_url "https://uploads.github.com/repos/fruho/fruhoapp/releases/1713418/assets{?name}"
+    set braceindex [string first \{ $upload_url]
+    set upload_url [string range $upload_url 0 [incr braceindex -1]]
+    return $upload_url
+}
+
+proc github-upload-artifacts {upload_url gituser gitpass} {
+    foreach file [concat [glob dist/linux-*/*.deb] [glob dist/linux-*/*.rpm]] {
+        set filename [file tail $file]
+        set uurl $upload_url?name=$filename
+        set uploaded [exec -ignorestderr curl -XPOST --header "Content-Type: application/zip" -d @$file $uurl -u "$gituser:$gitpass"]
+        set u [json::json2dict $uploaded]
+        set downurl [dict get $u browser_download_url]
+        puts "Uploaded artifact: $downurl"
+    }
+}
+
+proc html-changelog {commit2msg} {
+    set html ""
+    dict for {commit msg} $commit2msg {
+        set shortcommit [string range $commit 0 6]
+        append html "<li>$msg <a href=\"https://github.com/fruho/fruhoapp/commit/$commit\">#$shortcommit</a></li>\n"
+        
+    }
+    puts "Release changes:\n\n$html\n\n"
+    return $html
+}
+
+proc release {gituser} {
+
+    lappend ::auto_path [file normalize ./lib/generic]
+    package require json
+
+    puts "Enter your github password:"
+    set gitpass [gets stdin]
+
+    #set published_at [github-latest-release-date]
+
+    set published_at 2015-08-23T20:10:07Z
+
+    set commits [exec git log --since="$published_at"]
+    #puts "commits:\n$commits"
+    set commit2msg [parse-commits $commits]
+    
+    html-changelog $commit2msg
+
+    set upload_url [github-create-release $gituser $gitpass]
+
+    github-upload-artifacts $upload_url $gituser $gitpass 
+}
+
+
+set ::FRUHO_VERSION 0.0.7
 
 prepare-lib sklib 0.0.0
+
+release hypatia2
+
 
 #build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-build-fruho linux [this-arch]
+#build-fruho linux [this-arch]
 #build-fruhod linux [this-arch]
 #build-deb-rpm [this-arch]
 
