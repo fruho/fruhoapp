@@ -171,7 +171,7 @@ proc github-upload-artifacts {upload_url gituser gitpass} {
     foreach file [concat [glob dist/linux-*/*.deb] [glob dist/linux-*/*.rpm]] {
         set filename [file tail $file]
         set uurl $upload_url?name=$filename
-        set uploaded [exec -ignorestderr curl -XPOST --header "Content-Type: application/zip" -d @$file $uurl -u "$gituser:$gitpass"]
+        set uploaded [exec -ignorestderr curl -XPOST --header "Content-Type: application/zip" --data-binary @$file $uurl -u "$gituser:$gitpass"]
         set u [json::json2dict $uploaded]
         set downurl [dict get $u browser_download_url]
         lappend artifacts $downurl
