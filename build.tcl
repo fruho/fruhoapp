@@ -167,24 +167,25 @@ proc github-create-release {gituser gitpass} {
 }
 
 proc github-upload-artifacts {upload_url gituser gitpass} {
+    set artifacts {}
     foreach file [concat [glob dist/linux-*/*.deb] [glob dist/linux-*/*.rpm]] {
         set filename [file tail $file]
         set uurl $upload_url?name=$filename
         set uploaded [exec -ignorestderr curl -XPOST --header "Content-Type: application/zip" -d @$file $uurl -u "$gituser:$gitpass"]
         set u [json::json2dict $uploaded]
         set downurl [dict get $u browser_download_url]
-        puts "Uploaded artifact: $downurl"
+        lappend artifacts $downurl
     }
+    return $artifacts
 }
 
 proc html-changelog {commit2msg} {
     set html ""
     dict for {commit msg} $commit2msg {
-        set shortcommit [string range $commit 0 6]
+        set shortcommit [string range $commit 0 5]
         append html "<li>$msg <a href=\"https://github.com/fruho/fruhoapp/commit/$commit\">#$shortcommit</a></li>\n"
         
     }
-    puts "Release changes:\n\n$html\n\n"
     return $html
 }
 
@@ -198,17 +199,21 @@ proc release {gituser} {
 
     #set published_at [github-latest-release-date]
 
-    set published_at 2015-08-23T20:10:07Z
+    set published_at 2015-06-23T20:10:07Z
 
     set commits [exec git log --since="$published_at"]
     #puts "commits:\n$commits"
     set commit2msg [parse-commits $commits]
     
-    html-changelog $commit2msg
+    set html [html-changelog $commit2msg]
 
     set upload_url [github-create-release $gituser $gitpass]
 
-    github-upload-artifacts $upload_url $gituser $gitpass 
+    set artifacts [github-upload-artifacts $upload_url $gituser $gitpass]
+
+    puts "Release changes:\n\n$html\n\n"
+    puts "Uploaded artifacts:\n\n$artifacts\n\n"
+
 }
 
 
@@ -216,7 +221,6 @@ set ::FRUHO_VERSION 0.0.7
 
 prepare-lib sklib 0.0.0
 
-release hypatia2
 
 
 #build-total
@@ -224,9 +228,12 @@ release hypatia2
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 
-#build-fruho linux [this-arch]
+build-fruho linux [this-arch]
 #build-fruhod linux [this-arch]
 #build-deb-rpm [this-arch]
+
+#release hypatia2
+
 
 # sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb
 # sudo dpkg -i ./dist/linux-ix86/fruho_${::FRUHO_VERSION}_i386.deb
