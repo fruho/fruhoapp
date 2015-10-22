@@ -2791,7 +2791,11 @@ proc ffread-loop {} {
                                     model save
                                     # execl replaces the calling process image with a new process image. 
                                     # This has the effect of running a new program with the process ID of the calling process. 
+                                    # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
+                                    # kill [id process]
+                                    # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
                                     execl [this-binary]
+                                    kill [id process]
                                 }
                             }
                         }

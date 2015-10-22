@@ -351,7 +351,9 @@ proc upgrade {dir} {
         # execl replaces the calling process image with a new process image. 
         # This has the effect of running a new program with the process ID of the calling process. 
         # if this does not fail it never returns
+        # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
         execl /usr/local/sbin/fruhod.bin
+
     } on error {e1 e2} {
         # restore binaries from the backup path
         catch {
