@@ -1961,6 +1961,7 @@ proc UpdateNowClicked {uframe} {
         set files {fruho.bin.sig fruhod.bin.sig fruho.bin fruhod.bin}
         # csp channel for collecting info about downloaded files
         channel collector
+        #FIXME: files-exist should take full paths
         if {![files-exist $files]} {
             checkforupdates-status $uframe 16/downloading "Downloading..."
             foreach f $files {
@@ -2788,6 +2789,8 @@ proc ffread-loop {} {
                                 # restart only if different binaries
                                 if {$sha ne $::model::Running_binary_fingerprint} {
                                     model save
+                                    # execl replaces the calling process image with a new process image. 
+                                    # This has the effect of running a new program with the process ID of the calling process. 
                                     execl [this-binary]
                                 }
                             }

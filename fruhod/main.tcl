@@ -343,11 +343,13 @@ proc upgrade {dir} {
         exec cp -f $newfruhod $fruhodpath
         exec chmod u+rwx,go+rx $fruhodpath
         # replace fruho.bin
-        # so fruho.bin is deployed here with root rights, but fruho client must restart itself
+        # so fruho.bin is deployed here with root rights, but fruho client must restart itself => add permissions to group and others
         file rename -force $fpath $bf
         file copy -force $newf $fpath
         file attributes $fpath -permissions u+rwx,go+rx
 
+        # execl replaces the calling process image with a new process image. 
+        # This has the effect of running a new program with the process ID of the calling process. 
         # if this does not fail it never returns
         execl /usr/local/sbin/fruhod.bin
     } on error {e1 e2} {
