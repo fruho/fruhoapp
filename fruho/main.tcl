@@ -847,6 +847,7 @@ proc vpapi-config-direct {profilename host port urlpath username password} {
 
 
 # this is replacement for the old sign-cert call
+# it is a request to sign CSR - for now used only in case of FAAS
 proc vpapi-cert-direct {profilename host port urlpath username password} {
     try {
         set profileid [name2id $profilename]
@@ -941,12 +942,17 @@ proc faas-config-monitor {} {
         puts stderr [log faas-config-monitor running]
         tickernow t1 10000 #3
         range t $t1 {
-            if {[get-faas-config] == 200} {
+            set faas_result [get-faas-config]
+            puts stderr [log "faas_result=$faas_result"]
+            if {$faas_result == 200} {
                 gui-update
+                # this return terminates range but does not return from coroutine
                 return
             }
         }
-        puts stderr [log All faas-config-monitor attempts failed]
+        if {$faas_result != 200} {
+            puts stderr [log All faas-config-monitor attempts failed]
+        }
     } on error {e1 e2} {
         log "$e1 $e2"
     } finally {
@@ -964,7 +970,7 @@ proc get-faas-config {} {
         set port 10443
 
         if {![is-cert-received fruho]} {
-            set result [vpapi-cert-direct Fruho bootstrap $port /vpapi/cert?[this-pcv] $username $password]
+            set result [vpapi-cert-direct Fruho bootstrap $port /vpapi/fruho/cert?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-cert-direct Fruho failed with status $result"]
                 return $result
@@ -972,7 +978,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-cert-direct Fruho SUCCESS]
         }
         if {![is-config-received fruho]} {
-            set result [vpapi-config-direct Fruho bootstrap $port /vpapi/config?[this-pcv] $username $password]
+            set result [vpapi-config-direct Fruho bootstrap $port /vpapi/fruho/config?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-config-direct Fruho failed with status $result"]
                 return $result
@@ -980,7 +986,7 @@ proc get-faas-config {} {
             puts stderr [log vpapi-config-direct Fruho SUCCESS]
         }
         if {![dict exists $::model::Profiles fruho plans]} {
-            set result [vpapi-plans-direct Fruho bootstrap $port /vpapi/plans?[this-pcv] $username $password]
+            set result [vpapi-plans-direct Fruho bootstrap $port /vpapi/fruho/plans?[this-pcv] $username $password]
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-plans-direct Fruho failed with status $result"]
                 return $result
@@ -2387,6 +2393,7 @@ proc vpapi-port {profileid} {
     return [dict-pop $::model::Profiles $profileid vpapi_port 10443]
 }
 proc vpapi-path-plans {profileid} {
+    # watch out: default value of url path plans - it's pointing nowhere now
     return [dict-pop $::model::Profiles $profileid vpapi_path_plans /vpapi/plans]
 }
 

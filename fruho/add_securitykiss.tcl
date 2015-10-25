@@ -7,8 +7,8 @@ namespace eval ::securitykiss {
     variable dispname SecurityKISS
     variable host www.securitykiss.com
     variable port 10443
-    variable path_config /vpapi/config
-    variable path_plans /vpapi/plans
+    variable path_config /vpapi/securitykiss/config
+    variable path_plans /vpapi/securitykiss/plans
 
 
     # input entries - resettable/modifiable variables
@@ -114,6 +114,8 @@ proc ::securitykiss::ImportClicked {tab} {
             $pconf.importline.msg configure -text $msg
             return
         }
+
+        # save in the model to be able later refresh the plans via vpapi
         dict set ::model::Profiles $profileid vpapi_username $username
         dict set ::model::Profiles $profileid vpapi_password $password
         dict set ::model::Profiles $profileid vpapi_host $host
