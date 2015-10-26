@@ -2828,6 +2828,9 @@ proc ffread-loop {} {
                     switch -regexp -matchvar details [lindex $tokens 1] {
                         {^Initialization Sequence Completed} {
                         }
+                        {AUTH: Received control message: AUTH_FAILED} {
+                            $::model::Chan_openvpn_fail <- "AUTH_FAILED Wrong username/password"
+                        }
                     }
                 }
                 {^stat: (.*)$} {
@@ -2991,7 +2994,7 @@ proc ClickConnect {} {
     }
 }
 
-
+# coroutine that monitors various channels to set proper connstatus (to be displayed)
 proc connstatus-loop {} {
     try {
         channel empty_channel
@@ -3021,6 +3024,7 @@ proc connstatus-loop {} {
                     if {$newstatus ne [model connstatus]} {
                         # the stat report is the ultimate source of truth about connstatus BUT it may be out of date so consider it only after a delay since last change
                         if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
+                            log "newstatus: $newstatus"
                             model connstatus $newstatus
                             if {$newstatus eq "connected"} {
                                 trigger-geo-loc 1000

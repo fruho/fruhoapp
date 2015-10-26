@@ -97,6 +97,9 @@ proc MgmtRead {sock} {
                 {SUCCESS: 'Auth' password entered, but not yet verified} {
                     log "MGMT: $line"
                 }
+                {PASSWORD:Verification Failed: 'Auth'} {
+                    #this is handled on the fruho client side via AUTH_FAILED
+                }
                 pre-compress -
                 post-compress -
                 pre-decompress -
