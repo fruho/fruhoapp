@@ -28,8 +28,10 @@ namespace eval ::model {
     variable Mgmt_state_tstamp 0
     # management console client socket
     variable Mgmt_sock ""
-    # management console client connected - this is different from Mgmt_sock. This must be confirmed by the mgmt interface server.
-    variable Mgmt_clientok 0
+    # management console client connected - this is different from Mgmt_sock. It must be confirmed by the mgmt interface server.
+    # This flag is set a few seconds after the mgmt console connection. Mgmt console is not ready to accept commands immediately (probably OpenVPN bug)
+    # Send commands to mgmt console only when Mgmt_ready is 1. Otherwise it hangs the OpenVPN process.
+    variable Mgmt_ready 0
     # TUN/TAP read bytes
     variable mgmt_vread 0
     # TUN/TAP write bytes

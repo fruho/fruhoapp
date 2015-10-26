@@ -92,7 +92,7 @@ proc daemon-version-report {} {
 
 proc daemon-model-report {} {
     ovpn-pid
-    catch {ffwrite stat [model model2dict]}
+    catch {ffwrite stat [model model2dict] 0}
 } 
 
 proc cyclic-daemon-model-report {} {
@@ -126,7 +126,7 @@ proc ffconn-close {} {
     set ::model::Ffconn_sock ""
 }
 
-proc ffwrite {prefix msg} {
+proc ffwrite {prefix msg {dolog 1}} {
     set sock $::model::Ffconn_sock
     if {$sock eq ""} {
         return
@@ -136,10 +136,16 @@ proc ffwrite {prefix msg} {
         log Because of error could not ffwrite: $prefix: $msg
         ffconn-close
     } else {
-        log ffwrite: $prefix: $msg
+        if {$dolog} {
+            log ffwrite: $prefix: $msg
+        }
     }
 }
 
+# ::model::ovpn_config stores the full config with meta info and custom fruho options which is not correct openvpn config
+# adjust-config should strip the ovpn config of this data to make the result suitable to pass to openvpn
+# Also it should add missing options
+# It should produce legal openvpn config
 proc adjust-config {conf} {
     # adjust management port
     set mgmt [::ovconf::get $conf management]
@@ -165,6 +171,15 @@ proc adjust-config {conf} {
 
     # For --proto tcp-client, take 1 as the number of retries of connection attempt (default=infinite).
     set conf [::ovconf::cset $conf --connect-retry-max 1]
+
+    # For auth-user-pass interactive authentication enforce prompting from mgmt console
+    if {[::ovconf::index $conf --auth-user-pass] != -1} {
+        set conf [::ovconf::cset $conf --management-query-passwords]
+    }
+
+    # Remove custom authentication options 
+    set conf [::ovconf::del $conf --custom-auth-user]
+    set conf [::ovconf::del $conf --custom-auth-pass]
 
     # delete meta info
     set conf [::ovconf::del-meta $conf]
@@ -228,8 +243,8 @@ proc ffread {} {
                     set config [adjust-config $::model::ovpn_config]
                     set ovpncmd "openvpn $config"
                     try {
-                        set chan [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
-                        set ::model::Start_pid [pid $chan]
+                        set stdinout [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
+                        set ::model::Start_pid [pid $stdinout]
                         set ::model::Start_pid_tstamp [clock milliseconds]
                         # this call is necessary to update ovpn_pid
                         ovpn-pid
@@ -437,7 +452,7 @@ proc OvpnRead {line} {
                 }
             }
             default {
-                #log OPENVPN: $line
+                #log OPENVPN default: $line
             }
         }
         if {!$ignoreline} {

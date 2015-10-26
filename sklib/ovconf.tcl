@@ -89,7 +89,7 @@ proc ::ovconf::del {conf key {value ""}} {
     return $conf
 }
 
-
+# set or replace value for given key in config
 proc ::ovconf::cset {conf key {value ""}} {
     set key [::ovconf::ddash $key]
     # save current index of first key...

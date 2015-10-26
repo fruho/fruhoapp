@@ -1,26 +1,31 @@
 
-namespace eval ::securitykiss {
+# This version of hideipvpn config retrieval does not log in to hideipvpn website
+# It only takes the static config via VPAPI which is the same for all users
+# hideipvpn uses VPN username and password for authentication and shared certificate
+
+namespace eval ::hideipvpn {
     namespace export *
     namespace ensemble create
 
-    variable name securitykiss
-    variable dispname SecurityKISS
-    variable host www.securitykiss.com
+    variable name hideipvpn
+    variable dispname HideIpVPN
+    variable host bootstrap
+    # port is not relevant - it will be taken from bootstrap nodes list
     variable port 10443
-    variable path_config /vpapi/securitykiss/config
-    variable path_plans /vpapi/securitykiss/plans
+    variable path_config /vpapi/hideipvpn/config
+    variable path_plans /vpapi/hideipvpn/plans
 
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username client04284903
-    variable password 97d7a6cc3
+    variable username tgqyqzai
+    variable password behdfuuu
 
 }
 
 
 
-proc ::securitykiss::create-import-frame {tab} {
+proc ::hideipvpn::create-import-frame {tab} {
     variable name
     variable dispname
     variable newprofilename
@@ -32,10 +37,10 @@ proc ::securitykiss::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "$dispname username" -anchor e
+    ttk::label $pconf.usernamelabel -text "VPN username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
-    ttk::label $pconf.usernameinfo -foreground grey -text "e.g. client12345678"
-    ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
+    ttk::label $pconf.usernameinfo -foreground grey -text ""
+    ttk::label $pconf.passwordlabel -text "VPN password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
     ttk::frame $pconf.importline
@@ -63,14 +68,14 @@ proc ::securitykiss::create-import-frame {tab} {
     return $pconf
 }
         
-proc ::securitykiss::add-to-treeview-plist {plist} {
+proc ::hideipvpn::add-to-treeview-plist {plist} {
     variable name
     variable dispname
     $plist insert {} end -id $name -image [img load 16/logo_$name] -values [list $dispname]
 }
 
 # this is csp coroutine
-proc ::securitykiss::ImportClicked {tab} {
+proc ::hideipvpn::ImportClicked {tab} {
     try {
         variable name
         variable dispname
@@ -89,6 +94,8 @@ proc ::securitykiss::ImportClicked {tab} {
         $pconf.importline.msg configure -text "Importing configuration from $dispname"
         $pconf.importline.button configure -state disabled
     
+        # in case of hideipvpn using username and password has a different purpose than authentication
+        # instead of using for basic authentication (any strings will pass) the credentials are included in the returned config.ovpn
         set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
         # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
@@ -103,6 +110,9 @@ proc ::securitykiss::ImportClicked {tab} {
             return
         }
         puts stderr "VPAPI-CONFIG-DIRECT completed"
+
+        # in case of hideipvpn using username and password has a different purpose than authentication
+        # instead of using for basic authentication (any strings will pass) the credentials are included in the returned config.ovpn
         set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
         # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
@@ -116,8 +126,6 @@ proc ::securitykiss::ImportClicked {tab} {
             $pconf.importline.msg configure -text $msg
             return
         }
-
-        # save in the model to be able later refresh the plans via vpapi
         dict set ::model::Profiles $profileid vpapi_username $username
         dict set ::model::Profiles $profileid vpapi_password $password
         dict set ::model::Profiles $profileid vpapi_host $host
@@ -141,8 +149,8 @@ proc ::securitykiss::ImportClicked {tab} {
 }
 
 
-dict set model::Supported_providers securitykiss {
-    name $::securitykiss::name
-    dispname $::securitykiss::dispname
+dict set model::Supported_providers hideipvpn {
+    name $::hideipvpn::name
+    dispname $::hideipvpn::dispname
 }
 

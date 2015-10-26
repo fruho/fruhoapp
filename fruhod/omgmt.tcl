@@ -2,6 +2,11 @@
 # fruhod/omgmt.tcl
 #
 
+
+proc escape-special {s} {
+    return [string map {\" \\" \\ \\\\ { } {\ }} $s]
+}
+
 proc MgmtConnect {} {
     catch {MgmtClose}
     catch {
@@ -15,8 +20,8 @@ proc MgmtClose {} {
     if {$::model::Mgmt_sock ne ""} {
         catch {close $::model::Mgmt_sock}
         set ::model::Mgmt_sock ""
-        set ::model::Mgmt_clientok 0
     }
+    set ::model::Mgmt_ready 0
 }
 
 proc MgmtRead {sock} {
@@ -73,11 +78,24 @@ proc MgmtRead {sock} {
                 }
                 {OpenVPN Management Interface Version} {
                     # give more delay after MgmtConnect - workaround for the OpenVPN freeze bug
-                    after 3000 set ::model::Mgmt_clientok 1
+                    after 3000 set ::model::Mgmt_ready 1
                     #puts "OpenVPN welcome: $line"
                 }
                 {SUCCESS: hold release succeeded} {
                     #puts "$line"
+                }
+                {PASSWORD:Need 'Auth' username/password} {
+                    log "MGMT: $line"
+                    set username [escape-special [::ovconf::get $::model::ovpn_config --custom-auth-user]]
+                    set password [escape-special [::ovconf::get $::model::ovpn_config --custom-auth-pass]]
+                    MgmtWrite "username \"Auth\" \"$username\""
+                    MgmtWrite "password \"Auth\" \"$password\""
+                }
+                {SUCCESS: 'Auth' username entered, but not yet verified} {
+                    log "MGMT: $line"
+                }
+                {SUCCESS: 'Auth' password entered, but not yet verified} {
+                    log "MGMT: $line"
                 }
                 pre-compress -
                 post-compress -
@@ -131,11 +149,11 @@ proc MgmtConnectionMonitor {} {
     if {$::model::Mgmt_sock eq ""} {
         MgmtConnect
     }
-    after 500 MgmtConnectionMonitor
+    after 1000 MgmtConnectionMonitor
 }
 
 proc MgmtStatusMonitor {} {
-    if {$::model::Mgmt_clientok} {
+    if {$::model::Mgmt_ready} {
         MgmtStatus
     }
     after 400 MgmtStatusMonitor

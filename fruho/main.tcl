@@ -810,6 +810,10 @@ proc curl-dispatch {chout cherr hostport args} {
 }
 
 
+# testing command: 
+# curl --insecure https://fb028f09a9c7d574@37.59.65.55:10443/vpapi/fruho/config?p=linux-x86_64\&c=fb028f09a9c7d574\&v=0.0.7
+# or
+# curl https://client00000001:xxxxxx@securitykiss.com:10443/vpapi/securitykiss/config
 proc vpapi-config-direct {profilename host port urlpath username password} {
     try {
         set profileid [name2id $profilename]
@@ -971,6 +975,7 @@ proc get-faas-config {} {
 
         if {![is-cert-received fruho]} {
             set result [vpapi-cert-direct Fruho bootstrap $port /vpapi/fruho/cert?[this-pcv] $username $password]
+            # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-cert-direct Fruho failed with status $result"]
                 return $result
@@ -979,6 +984,7 @@ proc get-faas-config {} {
         }
         if {![is-config-received fruho]} {
             set result [vpapi-config-direct Fruho bootstrap $port /vpapi/fruho/config?[this-pcv] $username $password]
+            # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-config-direct Fruho failed with status $result"]
                 return $result
@@ -987,6 +993,7 @@ proc get-faas-config {} {
         }
         if {![dict exists $::model::Profiles fruho plans]} {
             set result [vpapi-plans-direct Fruho bootstrap $port /vpapi/fruho/plans?[this-pcv] $username $password]
+            # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
                 puts stderr [log "ERROR: vpapi-plans-direct Fruho failed with status $result"]
                 return $result

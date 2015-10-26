@@ -9,7 +9,8 @@ proc ::cmd::invoke {command {onexit {}} {onstdout puts} {onstderr {puts stderr}}
 
     lassign [chan pipe] stderr stderrin
     lappend command 2>@$stderrin
-    set stdout [open |$command]
+    # a+ - open the "command file" for reading and writing. Writing access is necessary if we want to use the resulting channel to push as standard input
+    set stdout [open |$command a+]
 
     #chan pipe creates a standalone pipe whose read- and write-side channels are returned as a 2-element list, the first element being the read side and the second the write side. Can be useful e.g. to redirect separately stderr and stdout from a subprocess. To do this, spawn with "2>@" or ">@" redirection operators onto the write side of a pipe, and then immediately close it in the parent. This is necessary to get an EOF on the read side once the child has exited or otherwise closed its output.
     chan close $stderrin
