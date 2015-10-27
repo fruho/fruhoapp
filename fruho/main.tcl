@@ -1353,14 +1353,14 @@ proc format-mega {n {trim 0}} {
 }
 
 
-# trim - trim the minor unit
+# trim - trim the minor unit if major > 5
 proc format-interval {sec {trim 0}} {
     set min [expr {$sec/60}]
     # if more than 24 hour
     if {$min > 1440} {
         set days [expr {$min/1440}]
         set hours [expr {($min-$days*1440)/60}]
-        if {$trim} {
+        if {$trim && $days > 5} {
             return "${days}d"
         } else {
             return "${days}d ${hours}h"
@@ -1368,7 +1368,7 @@ proc format-interval {sec {trim 0}} {
     } else {
         set hours [expr {$min/60}]
         set minutes [expr {$min-($hours*60)}]
-        if {$trim} {
+        if {$trim && $hours > 5} {
             return "${hours}h"
         } else {
             return "${hours}h ${minutes}m"
