@@ -14,7 +14,7 @@ namespace eval ::mullvad {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username 702114916207
+    variable username 1016121332615
     variable password ""
 
 }
@@ -33,7 +33,7 @@ proc ::mullvad::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "Account number" -anchor e
+    ttk::label $pconf.usernamelabel -text "Mullvad account number" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
     ttk::label $pconf.usernameinfo -foreground grey -text ""
     ttk::frame $pconf.importline

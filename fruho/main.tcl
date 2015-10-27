@@ -499,11 +499,15 @@ proc current-planid {tstamp profile} {
 
 
 proc period-elapsed {plan tstamp} {
-    return [expr {$tstamp - [period-start $plan $tstamp]}]
+    set period_elapsed [expr {$tstamp - [period-start $plan $tstamp]}]
+    #puts stderr "period-elapsed: $period_elapsed"
+    return $period_elapsed
 }
 
 proc period-length {plan tstamp} {
-    return [expr {[period-end $plan $tstamp] - [period-start $plan $tstamp]}]
+    set period_length [expr {[period-end $plan $tstamp] - [period-start $plan $tstamp]}]
+    #puts stderr "period-length: $period_length"
+    return $period_length
 }
 
 
@@ -511,7 +515,10 @@ proc period-end {plan tstamp} {
     set period [dict-pop $plan timelimit period day]
     set period_start [period-start $plan $tstamp]
     #TODO make sure that period is handled well when milliseconds/seconds
-    return [clock add $period_start 1 $period]
+    #set period_end [clock add $period_start 1 $period]
+    set period_end [clock-add-periods $period_start 1 $period]
+    #puts stderr "period-end:    $period_end"
+    return $period_end
 }
 
 proc period-start {plan tstamp} {
@@ -523,7 +530,8 @@ proc period-start {plan tstamp} {
     } elseif {$period eq "month"} {
         # average number of seconds in a month
         set periodsecs 2629800
-    #TODO one more else for handling period in seconds/milliseconds
+    } elseif {[string is integer -strict $period]} {
+        set periodsecs $period
     } else {
         # just in case set default to day
         set periodsecs 86400
@@ -533,13 +541,24 @@ proc period-start {plan tstamp} {
     # estimated number of periods
     set est [expr {$secs / $periodsecs - 2}]
     for {set i $est} {$i<$est+5} {incr i} {
-        set start [clock add $plan_start $i $period]
-        set end [clock add $plan_start [expr {$i+1}] $period]
+        #set start [clock add $plan_start $i $period]
+        set start [clock-add-periods $plan_start $i $period]
+        #set end [clock add $plan_start [expr {$i+1}] $period]
+        set end [clock-add-periods $plan_start [expr {$i+1}] $period]
         if {$start <= $tstamp && $tstamp < $end} {
+            #puts stderr "period-start:  $start"
             return $start
         }
     }
     error "Could not determine period-start for plan $plan and tstamp $tstamp"
+}
+
+proc clock-add-periods {start n period} {
+    if {[string is integer -strict $period]} {
+        return [expr {$start + $n * $period}]
+    } else {
+        return [clock add $start $n $period]
+    }
 }
 
 
@@ -552,8 +571,8 @@ proc plan-end {plan} {
     set period [dict-pop $plan timelimit period day]
     set plan_start [plan-start $plan]
     set nop [dict-pop $plan timelimit nop 0]
-    #TODO make it work for period being in {hour day month <ms>}
-    return [clock add $plan_start $nop $period]
+    #TODO make it work for period being in {hour day month <number_of_seconds>}
+    return [clock-add-periods $plan_start $nop $period]
 }
 
 
@@ -578,7 +597,8 @@ proc plan-comparator {tstamp a b} {
         return $active_diff
     }
     # use direct string compare - lexicographically day sorts before month
-    # TODO make it work for period being in {hour day month <ms>}
+    # TODO make it work for period being in {hour day month <number_of_seconds>}
+    # TODO really fix it for <number_of_seconds>
     set period_diff [string compare [dict-pop $b timelimit period day] [dict-pop $a timelimit period day]]
     if {$period_diff != 0} {
         return $period_diff
@@ -1525,8 +1545,8 @@ proc dash-time-update {tstamp} {
     if {[winfo exists $dbtime]} {
         set planid [current-planid $tstamp $profileid]
         set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
-        set period_start [period-start $plan $tstamp]
-        set period_end [period-end $plan $tstamp]
+        #set period_start [period-start $plan $tstamp]
+        #set period_end [period-end $plan $tstamp]
         set period_elapsed [period-elapsed $plan $tstamp]
         set period_length [period-length $plan $tstamp]
         if {$period_elapsed > 0 && $period_length > 0 && $period_elapsed > $period_length} {
