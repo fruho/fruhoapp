@@ -14,7 +14,7 @@ namespace eval ::mullvad {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username 1016121332615
+    variable username 438696513567
     variable password ""
 
 }
@@ -64,6 +64,7 @@ proc ::mullvad::add-to-treeview-plist {plist} {
     $plist insert {} end -id $name -image [img load 16/logo_$name] -values [list $dispname]
 }
 
+
 # this is csp coroutine
 proc ::mullvad::ImportClicked {tab} {
     try {
@@ -85,13 +86,8 @@ proc ::mullvad::ImportClicked {tab} {
         $pconf.importline.button configure -state disabled
     
         set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
-        # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
-            if {$result == 401} {
-                set msg "Incorrect username or password"
-            } else {
-                set msg $result
-            }
+            set msg [http2importline $result]
             img place 24/empty $pconf.importline.img
             $pconf.importline.button configure -state normal
             $pconf.importline.msg configure -text $msg
@@ -100,13 +96,8 @@ proc ::mullvad::ImportClicked {tab} {
         puts stderr "VPAPI-CONFIG-DIRECT completed"
 
         set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
-        # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
-            if {$result == 401} {
-                set msg "Incorrect username/password"
-            } else {
-                set msg $result
-            }
+            set msg [http2importline $result]
             img place 24/empty $pconf.importline.img
             $pconf.importline.button configure -state normal
             $pconf.importline.msg configure -text $msg

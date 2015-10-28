@@ -97,13 +97,8 @@ proc ::hideipvpn::ImportClicked {tab} {
         # in case of hideipvpn using username and password has a different purpose than authentication
         # instead of using for basic authentication (any strings will pass) the credentials are included in the returned config.ovpn
         set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
-        # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
-            if {$result == 401} {
-                set msg "Incorrect username or password"
-            } else {
-                set msg $result
-            }
+            set msg [http2importline $result]
             img place 24/empty $pconf.importline.img
             $pconf.importline.button configure -state normal
             $pconf.importline.msg configure -text $msg
@@ -114,13 +109,8 @@ proc ::hideipvpn::ImportClicked {tab} {
         # in case of hideipvpn using username and password has a different purpose than authentication
         # instead of using for basic authentication (any strings will pass) the credentials are included in the returned config.ovpn
         set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
-        # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
         if {$result != 200} {
-            if {$result == 401} {
-                set msg "Incorrect username/password"
-            } else {
-                set msg $result
-            }
+            set msg [http2importline $result]
             img place 24/empty $pconf.importline.img
             $pconf.importline.button configure -state normal
             $pconf.importline.msg configure -text $msg

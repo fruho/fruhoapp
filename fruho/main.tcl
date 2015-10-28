@@ -829,6 +829,23 @@ proc curl-dispatch {chout cherr hostport args} {
     }
 }
 
+# convert http status code into user friendly status message
+# this is to handle vpapi nuncio errors
+proc http2importline {httpcode} {
+    if {$httpcode == 401} {
+        set msg "Incorrect username or password"
+    } elseif {$httpcode == 402} {
+        set msg "Account no longer active"
+    } elseif {$httpcode == 503} {
+        set msg "Service unavailable"
+    } elseif {$httpcode == 500} {
+        set msg "Service error"
+    } else {
+        set msg "Service status: $httpcode"
+    }
+    return $msg
+}
+ 
 
 # testing command: 
 # curl --insecure https://fb028f09a9c7d574@37.59.65.55:10443/vpapi/fruho/config?p=linux-x86_64\&c=fb028f09a9c7d574\&v=0.0.7
@@ -2631,6 +2648,7 @@ proc this-pcv {} {
 # go curl-retry $chout $cherr -hostports [lrepeat $n $host:$port] -urlpath $urlpath {*}$args
 # tryout - if success, http content response will be sent to this channel or empty string if -gettofile
 # tryerr - if all attempts failed, last error (http response code) will be sent to this channel
+# This proc is a mess - no clear semantics for retrying on failure (is non-200 http status code a success to be pushed to tryout, or fail to tryerr, or retry?)
 proc curl-retry {tryout tryerr args} {
     try {
         fromargs {-urlpath -indiv_timeout -hostports -hindex -proto -expected_hostname -method -gettofile -postfromfile -basicauth -cadir} \
@@ -2652,6 +2670,7 @@ proc curl-retry {tryout tryerr args} {
 
         set hlen [llength $hostports]
         set ncode 0
+        set ncode_nonempty 0
         # host_index is the index to start from when iterating hostports
         for {set i $host_index} {$i<$host_index+$hlen} {incr i} {
             set hostport [lindex $hostports [expr {$i % $hlen}]]
@@ -2698,6 +2717,9 @@ proc curl-retry {tryout tryerr args} {
                 set tok [<- $chhttp]
                 upvar #0 $tok state
                 set ncode [http::ncode $tok]
+                if {[string is integer -strict $ncode]} {
+                    set ncode_nonempty $ncode
+                }
                 set status [http::status $tok]
                 if {$status eq "ok" && $ncode == 200} {
                     set host_index [expr {$i % $hlen}]
@@ -2727,7 +2749,8 @@ proc curl-retry {tryout tryerr args} {
                 catch {http::cleanup $tok}
             }
         }
-        $tryerr <- $ncode
+        puts stderr [log "curl-retry pushing ncode_nonempty=$ncode_nonempty to tryerr channel"]
+        $tryerr <- $ncode_nonempty
     } on error {e1 e2} {
         log "$e1 $e2"
     } finally {
