@@ -190,10 +190,12 @@ proc adjust-config {conf} {
 proc load-config {conf} {
     # every attempt to load config should reset the previous one
     set ::model::ovpn_config ""
-    # sanitize config input
-    if {![regexp {^[\d\w\s_:/\-.\{\}"]*$} $conf]} {
-        log "CONF:\n$conf"
-        return "Config contains illegal characters"
+    # sanitize config input - DON'T. It may contain custom-auth-user and custom-auth-pass
+    if 0 {
+        if {![regexp {^[\d\w\s@_:/\-.\{\}"]*$} $conf]} {
+            log "CONF:\n$conf"
+            return "Config contains illegal characters"
+        }
     }
     set patherror [::ovconf::check-paths-exist $conf]
     if {$patherror ne ""} {

@@ -167,6 +167,7 @@ proc ::ovconf::inline-section-coords {config tag} {
     set tag [string tolower $tag]
     set istart [string first "<$tag>" $config]
     set iend [string first "</$tag>" $config]
+    #puts stderr "inline-section-coords for tag $tag: istart=$istart, iend=$iend"
     if {$istart != -1 && $iend != -1 && $iend - $istart > 200} {
         return [list $istart $iend]
     }

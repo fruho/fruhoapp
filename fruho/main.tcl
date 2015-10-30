@@ -1097,8 +1097,11 @@ proc connect-button-stand {} {
     if {[is-addprovider-tab-selected]} {
         return disabled
     }
-    # CSR not completed yet - disable buttons
-    if {![is-cert-received [current-profile]] || ![is-config-received [current-profile]]} {
+    if {![is-config-received [current-profile]]} {
+        return disabled
+    }
+    # For Fruho faas, CSR not completed yet - disable buttons
+    if {[current-profile] eq "fruho" && ![is-cert-received [current-profile]]} {
         return disabled
     }
     set slist [current-slist [model now] [current-profile]]
@@ -1125,8 +1128,11 @@ proc disconnect-button-stand {} {
     # In case of Disconnect button on addprovider tab apply the full connstatus logic
     if {![is-addprovider-tab-selected]} {
         # These checks make sense only when real profile selected
-        # CSR not completed yet - disable buttons
-        if {![is-cert-received [current-profile]] || ![is-config-received [current-profile]]} {
+        if {![is-config-received [current-profile]]} {
+            return disabled
+        }
+        # For Fruho faas, CSR not completed yet - disable buttons
+        if {[current-profile] eq "fruho" && ![is-cert-received [current-profile]]} {
             return disabled
         }
     }
@@ -2529,6 +2535,7 @@ proc ServerListClicked {} {
             if {![img exists $flag]} {
                 set flag 24/flag/EMPTY
             }
+            #puts stderr "TREE INSERT $id           $country $city $ip"
             $wt insert {} end -id $id -image [img load $flag] -values [list $country $city $ip]
         }
         $wt selection set $ssid
@@ -3008,17 +3015,17 @@ proc ClickConnect {} {
         set ::model::Current_protoport [select-protoport-ovs $::model::Current_sitem]
         lassign $::model::Current_protoport proto port
 
-        #TODO handle inline certs and keys
+        # include local certs/keys if files present
         set cert [ovconf get $localconf --cert]
-        if {$cert eq ""} {
+        if {$cert eq "" && [file exists [ovpndir $profile client.crt]]} {
             set localconf [ovconf cset $localconf --cert [ovpndir $profile client.crt]]
         }
         set key [ovconf get $localconf --key]
-        if {$key eq ""} {
+        if {$key eq "" && [file exists [ovpndir $profile client.key]]} {
             set localconf [ovconf cset $localconf --key [ovpndir $profile client.key]]
         }
         set ca [ovconf get $localconf --ca]
-        if {$ca eq ""} {
+        if {$ca eq "" && [file exists [ovpndir $profile ca.crt]]} {
             set localconf [ovconf cset $localconf --ca [ovpndir $profile ca.crt]]
         }
 
