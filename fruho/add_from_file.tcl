@@ -82,7 +82,7 @@ proc ::from_file::ImportClicked {tab} {
             dict set ::model::Profiles $profileid plans [dict create plainid $plan]
             dict set ::model::Profiles $profileid profilename $newprofilename
 
-            go update-bulk-loc $profileid
+            go update-bulk-sitem $profileid
         
             # when repainting tabset select the newly created tab
             set ::model::selected_profile [name2id $newprofilename]

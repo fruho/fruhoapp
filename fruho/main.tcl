@@ -702,6 +702,7 @@ proc get-external-loc {} {
 }
 
 # take list of ip addresses
+# return list of geo records like: {ip 11.22.33.44 cc DE country Germany city Frankfurt} 
 proc get-bulk-loc {ips} {
     try {
         channel {chout cherr} 5
@@ -720,7 +721,7 @@ proc get-bulk-loc {ips} {
                     puts stderr "BULK: $data"
                     set loc [json::json2dict $data]
                     set success 1
-                    puts stderr "GEO: $loc"
+                    puts stderr "GEO loc: $loc"
                     # Never call return from select condition
                 }
                 <- $cherr {
@@ -740,18 +741,71 @@ proc get-bulk-loc {ips} {
     }
 }
 
-proc update-bulk-loc {profileid} {
+
+
+# take list of domain names
+# return dict: domain => list of IPs
+proc get-bulk-dns {hosts} {
+    try {
+        channel {chout cherr} 5
+        if {[llength $hosts] == 0} {
+            return {}
+        }
+        set hostfile /tmp/hostfile_[rand-big]
+        spit $hostfile [join $hosts \n]
+        set res [dict create]
+        set success 0
+        for {set i 0} {$i < 3 && !$success} {incr i} {
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /dns?[this-pcv] -method POST -type text/plain -postfromfile $hostfile
+            select {
+                <- $chout {
+                    set data [<- $chout]
+                    puts stderr "BULK: $data"
+                    set res [json::json2dict $data]
+                    set success 1
+                    puts stderr "bulk-dns: $res"
+                    # Never call return from select condition
+                }
+                <- $cherr {
+                    set err [<- $cherr]
+                    puts stderr [log get-bulk-dns failed with error: $err]
+                    # Never call return from select condition
+                }
+            }
+        }
+        return $res
+    } on error {e1 e2} {
+        log "$e1 $e2"
+        return {}
+    } finally {
+        catch {$chout close}
+        catch {$cherr close}
+    }
+}
+
+
+proc update-bulk-sitem {profileid} {
     try {
         set ips {}
+        set hosts {}
         dict for {_ plan} [dict-pop $::model::Profiles $profileid plans {}] {
             foreach sitem [dict-pop $plan slist {}] {
                 set ip [dict-pop $sitem ip {}]
                 if {[is-valid-ip $ip]} {
                     lappend ips $ip
+                } else {
+                    lappend hosts $ip
                 }
             }
         }
-        set loc [get-bulk-loc $ips]
+
+        set host2ips [get-bulk-dns $hosts]
+        set allips $ips
+        foreach {host hips} $host2ips {
+            set allips [concat $allips $hips]
+        }
+        # list of geo records
+        set loc [get-bulk-loc $allips]
 
         dict for {planid plan} [dict-pop $::model::Profiles $profileid plans {}] {
             set slist [dict-pop $plan slist {}]
@@ -768,24 +822,21 @@ proc update-bulk-loc {profileid} {
 proc rebuild-slist-with-geoloc {slist loc} {
     set newslist {}
     set geomap [dict create]
-    foreach l $loc {
-        dict set geomap [dict-pop $l ip {}] $l
+    if {[llength $slist] == 0} {
+        return $slist
     }
-    foreach sitem $slist {
-        set newsitem $sitem
-        if {[dict-pop $sitem ccode {}] eq ""} {
-            set ip [dict-pop $sitem ip {}]
-            set geo [dict-pop $geomap $ip {}]
-            if {$geo ne ""} {
-                set newsitem [dict create]
-                dict set newsitem id [dict-pop $sitem id {}]
-                dict set newsitem ip [dict-pop $sitem ip {}]
-                dict set newsitem ovses [dict-pop $sitem ovses {}]
-                dict set newsitem ccode [dict-pop $geo cc {}]
-                dict set newsitem country [dict-pop $geo country {}]
-                dict set newsitem city [dict-pop $geo city {}]
-            }
-        }
+    set sitem [lindex $slist 0]
+    set ovses [dict-pop $sitem ovses {}]
+    set id 1
+    foreach l $loc {
+        set newsitem [dict create]
+        dict set newsitem id $id
+        dict set newsitem ip [dict-pop $l ip {}]
+        dict set newsitem ovses $ovses
+        dict set newsitem ccode [dict-pop $l cc {}]
+        dict set newsitem country [dict-pop $l country {}]
+        dict set newsitem city [dict-pop $l city {}]
+        incr id
         lappend newslist $newsitem
     }
     return $newslist
