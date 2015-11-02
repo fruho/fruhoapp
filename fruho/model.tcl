@@ -131,8 +131,8 @@ if 0 {    variable Profiles [dict create fruho {
     variable previous_traffic_probes 5
 
 
-    variable Gui_openvpn_connection_timeout 15
-    variable openvpn_connection_timeout 15
+    variable Gui_openvpn_connection_timeout 25
+    variable openvpn_connection_timeout 25
 
     csp::channel ::model::Chan_button_connect
     csp::channel ::model::Chan_button_disconnect

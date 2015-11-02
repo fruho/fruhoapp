@@ -21,6 +21,15 @@ proc parse-ip {s} {
     }
 }
 
+proc is-valid-host {s} {
+    if {[is-valid-ip $s]} {
+        return 1
+    }
+    return [regexp {[a-z0-9\-]+\.[a-z0-9\-.]+} $s]
+
+}
+
+
 proc is-valid-ip {s} {
     set parsed [parse-ip $s]
     return [expr {$parsed ne ""}]
@@ -629,6 +638,17 @@ proc dict-set-iev {dictVar k v} {
         dict set d $k $v
     }
 }
+
+
+# dict set that trims whitespaces from the value
+proc dict-set-trim {dictVar args} {
+    upvar $dictVar d
+    set v [string trim [lindex $args end]]
+    set keys [lrange $args 0 end-1]
+    dict set d {*}$keys $v
+    return $d
+}
+
 
 
 ######################### 

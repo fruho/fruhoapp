@@ -756,7 +756,7 @@ proc update-bulk-loc {profileid} {
         dict for {planid plan} [dict-pop $::model::Profiles $profileid plans {}] {
             set slist [dict-pop $plan slist {}]
             set slist [rebuild-slist-with-geoloc $slist $loc]
-            dict set ::model::Profiles $profileid plans $planid slist $slist
+            dict-set-trim ::model::Profiles $profileid plans $planid slist $slist
         }
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
@@ -939,8 +939,8 @@ proc vpapi-plans-direct {profilename host port urlpath username password} {
                 puts stderr [log Received plans JSON: $data]
                 set plans [json::json2dict $data]
                 set profileid [name2id $profilename]
-                dict set ::model::Profiles $profileid plans $plans
-                dict set ::model::Profiles $profileid profilename $profilename
+                dict-set-trim ::model::Profiles $profileid plans $plans
+                dict-set-trim ::model::Profiles $profileid profilename $profilename
                 #puts stderr "Profiles: $::model::Profiles"
                 set httpcode 200
                 # Never call return from select condition
@@ -3007,7 +3007,7 @@ proc ClickConnect {} {
         set ::model::Current_sitem [model selected-sitem $profile $planid]
 
         # additional profile name info in sitem that will be passed as metadata to openvpn config / fruhod
-        dict set ::model::Current_sitem profile $profile
+        dict-set-trim ::model::Current_sitem profile $profile
         set localconf [::ovconf::parse [ovpndir $profile config.ovpn]]
 
         set ip [dict get $::model::Current_sitem ip]
@@ -3091,12 +3091,14 @@ proc ClickConnect {} {
                 set modal [ShowModal $w]
                 if {$modal eq "ok"} {
                     puts stderr "Userpass entered"
+                    set ::model::Gui_auth_user [string trim $::model::Gui_auth_user]
+                    set ::model::Gui_auth_pass [string trim $::model::Gui_auth_pass]
                     set localconf [ovconf cset $localconf --custom-auth-user $::model::Gui_auth_user]
                     set localconf [ovconf cset $localconf --custom-auth-pass $::model::Gui_auth_pass]
                     # we allow empty credentials in the GUI but don't cache empty ones. Use them once
                     if {$::model::Gui_auth_user ne "" && $::model::Gui_auth_pass ne ""} {
-                        dict set ::model::Profiles $profile cache_custom_auth_user $::model::Gui_auth_user
-                        dict set ::model::Profiles $profile cache_custom_auth_pass $::model::Gui_auth_pass
+                        dict-set-trim ::model::Profiles $profile cache_custom_auth_user $::model::Gui_auth_user
+                        dict-set-trim ::model::Profiles $profile cache_custom_auth_pass $::model::Gui_auth_pass
                     }
                 } else {
                     set should_connect 0

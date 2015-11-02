@@ -78,7 +78,7 @@ proc ::from_file::ImportClicked {tab} {
             set slist [extract-servers $tempdir]
             puts stderr "slist: $slist"
     
-            set plan [dict create name $newprofilename timelimit [dict create start 0 period month nop 1] trafficlimit [dict create used 0 quota 1000000000] slist $slist]
+            set plan [dict create name $newprofilename timelimit [dict create start 0 period month nop 1000000] trafficlimit [dict create used 0 quota 1000000000] slist $slist]
             dict set ::model::Profiles $profileid plans [dict create plainid $plan]
             dict set ::model::Profiles $profileid profilename $newprofilename
 
@@ -186,23 +186,29 @@ proc ::from_file::extract-servers {tempdir} {
     set files [find-ovpn-in $tempdir * 1]
     set files [concat $files [find-ovpn-in $tempdir */* 1]]
     set files [concat $files [find-ovpn-in $tempdir */*/* 1]]
-    # list of triples {ip proto port}
+    # list of triples {host proto port}
     set endpoints {}
+    puts stderr "extract-servers files: $files"
     foreach f $files {
         set ovpn [slurp $f]
+        puts stderr "slurp ovpn: $ovpn"
         set remotes [ovconf raw-get $ovpn remote]
         set remotes [concat $remotes [ovconf raw-get $ovpn #remote]]
         set remotes [concat $remotes [ovconf raw-get $ovpn "# remote"]]
+        puts stderr "remotes: $remotes"
         set proto [ovconf raw-get $ovpn proto]
         foreach r $remotes {
-            lassign $r ip port
-            if {[is-valid-ip $ip] && [is-valid-port $port] && [is-valid-proto $proto]} {
-                set triple [list $ip $proto $port]
+            lassign $r host port
+            if {[is-valid-host $host] && [is-valid-port $port] && [is-valid-proto $proto]} {
+                set triple [list $host $proto $port]
                 lappend endpoints $triple
             }
         }
     }
     set endpoints [lunique $endpoints]
+
+    #TODO resolve hostsnames
+
 
     set slist {}
     if {[llength $endpoints] > 0} {
