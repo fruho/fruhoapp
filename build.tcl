@@ -229,8 +229,8 @@ prepare-lib sklib 0.0.0
 
 
 build-fruho linux [this-arch]
-build-fruhod linux [this-arch]
-build-deb-rpm [this-arch]
+#build-fruhod linux [this-arch]
+#build-deb-rpm [this-arch]
 
 #release hypatia2
 

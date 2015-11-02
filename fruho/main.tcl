@@ -2269,8 +2269,8 @@ proc OptionsClicked {} {
         button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
         button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
         grid $wb -sticky news
-        grid $wb.cancel -row 5 -column 0 -padx {30 0} -pady 5 -sticky w
-        grid $wb.ok -row 5 -column 1 -padx {0 30} -pady 5 -sticky e
+        grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
+        grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e
         grid columnconfigure $wb 0 -weight 1
         grid rowconfigure $wb 0 -weight 1
         grid columnconfigure $w 0 -weight 1
@@ -2549,8 +2549,8 @@ proc ServerListClicked {} {
         button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
         button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
         grid $wb -sticky news
-        grid $wb.cancel -row 5 -column 0 -padx {30 0} -pady 5 -sticky w
-        grid $wb.ok -row 5 -column 1 -padx {0 30} -pady 5 -sticky e
+        grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
+        grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e
         grid columnconfigure $wb 0 -weight 1
     
         bind Treeview <Return> [list set ::Modal.Result ok]
@@ -3032,13 +3032,88 @@ proc ClickConnect {} {
         set localconf [ovconf cset $localconf --proto $proto]
         set localconf [ovconf cset $localconf --remote "$ip $port"]
         set localconf [ovconf cset $localconf --meta $::model::Current_sitem]
-        puts stderr [log localconf: $localconf]
-        ffwrite "config $localconf"
 
-        # append newlines to openvpn log for better readability
-        puts $::model::OPENVPNLOG "\n\n"
+        # include in localconf the cached username and password prompted in the past
+        set cache_user [dict-pop $::model::Profiles $profile cache_custom_auth_user ""]
+        if {$cache_user ne ""} {
+            set localconf [ovconf cset $localconf --custom-auth-user $cache_user]
+        }
+        set cache_pass [dict-pop $::model::Profiles $profile cache_custom_auth_pass ""]
+        if {$cache_pass ne ""} {
+            set localconf [ovconf cset $localconf --custom-auth-pass $cache_pass]
+        }
 
-        $::model::Chan_button_connect <- 1
+        set should_connect 1
+        
+        # if auth-user-pass option present we must ensure that custom-auth options are set
+        if {[::ovconf::index $localconf --auth-user-pass] != -1} {
+            if {[::ovconf::index $localconf --custom-auth-user] == -1 || [::ovconf::index $localconf --custom-auth-pass] == -1} {
+                set w .userpass_dialog
+                catch {destroy $w}
+                toplevel $w
+                
+                set wf $w.fields
+                frame $wf
+                label $wf.userlabel -text "Username" -anchor e
+                set ::model::Gui_auth_user ""
+                entry $wf.userentry -textvariable ::model::Gui_auth_user
+                label $wf.passlabel -text "Password" -anchor e
+                set ::model::Gui_auth_pass ""
+                entry $wf.passentry -textvariable ::model::Gui_auth_pass
+                grid $wf.userlabel -row 5 -column 0 -sticky e -padx 10 -pady {10 5}
+                grid $wf.userentry -row 5 -column 1 -sticky w -padx 10 -pady {10 5}
+                grid $wf.passlabel -row 7 -column 0 -sticky e -padx 10 -pady {5 10}
+                grid $wf.passentry -row 7 -column 1 -sticky w -padx 10 -pady {5 10}
+                grid $wf -sticky news
+                grid columnconfigure $wf all -weight 1
+                grid rowconfigure $wf all -weight 1
+
+                grid columnconfigure $w 0 -weight 1
+                grid rowconfigure $w 0 -weight 1
+
+                set wb $w.buttons
+                frame $wb
+                button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
+                button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
+                grid $wb -sticky news
+                grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
+                grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e
+                grid columnconfigure $wb 0 -weight 1
+                grid rowconfigure $wb 0 -weight 1
+            
+                bind $w <Escape> [list set ::Modal.Result cancel]
+                bind $w <Control-w> [list set ::Modal.Result cancel]
+                bind $w <Control-q> [list set ::Modal.Result cancel]
+                wm title $w "Connection username and password"
+
+                focus $wf.userentry
+
+                set modal [ShowModal $w]
+                if {$modal eq "ok"} {
+                    puts stderr "Userpass entered"
+                    set localconf [ovconf cset $localconf --custom-auth-user $::model::Gui_auth_user]
+                    set localconf [ovconf cset $localconf --custom-auth-pass $::model::Gui_auth_pass]
+                    # we allow empty credentials in the GUI but don't cache empty ones. Use them once
+                    if {$::model::Gui_auth_user ne "" && $::model::Gui_auth_pass ne ""} {
+                        dict set ::model::Profiles $profile cache_custom_auth_user $::model::Gui_auth_user
+                        dict set ::model::Profiles $profile cache_custom_auth_pass $::model::Gui_auth_pass
+                    }
+                } else {
+                    set should_connect 0
+                }
+                destroy $w
+            }
+        }
+
+        if {$should_connect} {
+            puts stderr [log localconf: $localconf]
+            ffwrite "config $localconf"
+    
+            # append newlines to openvpn log for better readability
+            puts $::model::OPENVPNLOG "\n\n"
+    
+            $::model::Chan_button_connect <- 1
+        }
     } on error {e1 e2} {
         puts stderr [log "$e1 $e2"]
     }

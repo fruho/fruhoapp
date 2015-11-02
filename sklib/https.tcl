@@ -13,7 +13,7 @@ package require tls
 
 
 namespace eval ::https {
-    variable default_timeout 5000
+    variable default_timeout 15000
     variable sock2host
     variable sock2error
     variable host2expected
