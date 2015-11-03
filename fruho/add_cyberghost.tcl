@@ -5,17 +5,10 @@ namespace eval ::cyberghost {
 
     variable name cyberghost
     variable dispname CyberGhost
-    variable host bootstrap
-    variable port 10443
-    variable path_config /vpapi/cyberghost/config
-    variable path_plans /vpapi/cyberghost/plans
-
-
     # input entries - resettable/modifiable variables
     variable newprofilename ""
     variable username 4478671_8Tp4DJYrvg
     variable password 85hSeYF8hb
-
 }
 
 
@@ -32,6 +25,13 @@ proc ::cyberghost::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
+    ttk::frame $pconf.select
+    ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf.select.msg $pconf.importline.button]
+    grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
+    grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
+    grid columnconfigure $pconf.select 0 -weight 1
+    ttk::label $pconf.selectinfo -foreground grey
     ttk::label $pconf.usernamelabel -text "Username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
     ttk::label $pconf.usernameinfo -foreground grey
@@ -39,7 +39,7 @@ proc ::cyberghost::create-import-frame {tab} {
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
     ttk::frame $pconf.importline
-    ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
+    ttk::button $pconf.importline.button -state disabled -text "Import configuration" -command [list go ::${name}::ImportClicked $tab $name]
     # must use non-ttk label for proper animated gif display
     label $pconf.importline.img
     img place 24/empty $pconf.importline.img
@@ -53,6 +53,8 @@ proc ::cyberghost::create-import-frame {tab} {
     grid $pconf.profilelabel -row 1 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.profileinput -row 1 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.profileinfo -row 1 -column 2 -sticky news -pady 5
+    grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
+    grid $pconf.selectinfo -row 4 -column 2 -sticky news
     grid $pconf.usernamelabel -row 5 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.usernameinput -row 5 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.usernameinfo -row 5 -column 2 -sticky news -pady 5
@@ -70,62 +72,16 @@ proc ::cyberghost::add-to-treeview-plist {plist} {
 }
 
 # this is csp coroutine
-proc ::cyberghost::ImportClicked {tab} {
+proc ::cyberghost::ImportClicked {tab name} {
     try {
-        variable name
-        variable dispname
-        variable host
-        variable port
-        variable path_config
-        variable path_plans
+        variable newprofilename
         variable username
         variable password
-        variable newprofilename
-
-        set profileid [name2id $newprofilename]
-
-        set pconf $tab.$name
-        img place 24/spin $pconf.importline.img
-        $pconf.importline.msg configure -text "Importing configuration from $dispname"
-        $pconf.importline.button configure -state disabled
-    
-        set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
-        if {$result != 200} {
-            set msg [http2importline $result]
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text $msg
-            return
+        if {$username ne "" && $password ne ""} {
+            dict-set-trim ::model::Profiles [name2id $newprofilename] cache_custom_auth_user $username
+            dict-set-trim ::model::Profiles [name2id $newprofilename] cache_custom_auth_pass $password
         }
-        puts stderr "VPAPI-CONFIG-DIRECT completed"
-
-        set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
-        if {$result != 200} {
-            set msg [http2importline $result]
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text $msg
-            return
-        }
-
-        # save in the model to be able later refresh the plans via vpapi
-        dict set ::model::Profiles $profileid vpapi_username $username
-        dict set ::model::Profiles $profileid vpapi_password $password
-        dict set ::model::Profiles $profileid vpapi_host $host
-        dict set ::model::Profiles $profileid vpapi_port $port
-        dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
-
-        puts stderr "VPAPI-PLANS-DIRECT completed"
-    
-        img place 24/empty $pconf.importline.img
-        $pconf.importline.msg configure -text ""
-        $pconf.importline.button configure -state normal
-        set ::${name}::username ""
-        set ::${name}::password ""
-    
-        # when repainting tabset select the newly created tab
-        set ::model::selected_profile $profileid
-        tabset-profiles .c.tabsetenvelope
+        ::from_file::ImportClicked $tab $name
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }

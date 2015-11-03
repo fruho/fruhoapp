@@ -7,11 +7,8 @@ namespace eval ::from_file {
 
     variable name from_file
     variable dispname "From file"
-
-
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-
 }
 
 
@@ -30,14 +27,14 @@ proc ::from_file::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::frame $pconf.select
     ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::${name}::SelectFileClicked $pconf.select.msg $pconf.importline.button]
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf.select.msg $pconf.importline.button]
     grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
     grid columnconfigure $pconf.select 0 -weight 1
     ttk::label $pconf.selectinfo -foreground grey
 
     ttk::frame $pconf.importline
-    ttk::button $pconf.importline.button -state disabled -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
+    ttk::button $pconf.importline.button -state disabled -text "Import configuration" -command [list go ::${name}::ImportClicked $tab $name]
     # must use non-ttk label for proper animated gif display
     label $pconf.importline.img
     img place 24/empty $pconf.importline.img
@@ -78,11 +75,9 @@ proc ::from_file::SelectFileClicked {selectLbl importBtn} {
 
 
 # this is csp coroutine
-proc ::from_file::ImportClicked {tab} {
+proc ::from_file::ImportClicked {tab name} {
     try {
-        variable name
-        variable dispname
-        variable newprofilename
+        set newprofilename [set ::${name}::newprofilename]
         set pconf $tab.$name
     
         set profileid [name2id $newprofilename]
