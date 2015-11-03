@@ -30,11 +30,22 @@ proc ::from_file::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::frame $pconf.select
     ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_$name] -command [list go ::${name}::ImportClicked $tab]
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::${name}::SelectFileClicked $pconf.select.msg $pconf.importline.button]
     grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
     grid columnconfigure $pconf.select 0 -weight 1
     ttk::label $pconf.selectinfo -foreground grey
+
+    ttk::frame $pconf.importline
+    ttk::button $pconf.importline.button -state disabled -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
+    # must use non-ttk label for proper animated gif display
+    label $pconf.importline.img
+    img place 24/empty $pconf.importline.img
+    ttk::label $pconf.importline.msg
+    grid $pconf.importline.button -row 0 -column 0 -padx 10
+    grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
+    grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -43,6 +54,7 @@ proc ::from_file::create-import-frame {tab} {
     grid $pconf.profileinfo -row 1 -column 2 -sticky news -pady 5
     grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
     grid $pconf.selectinfo -row 4 -column 2 -sticky news
+    grid $pconf.importline -sticky news -columnspan 3
     return $pconf
 }
         
@@ -51,6 +63,19 @@ proc ::from_file::add-to-treeview-plist {plist} {
     variable dispname
     $plist insert {} end -id $name -image [img load 16/logo_$name] -values [list $dispname]
 }
+
+
+proc ::from_file::SelectFileClicked {selectLbl importBtn} {
+    # "Select configuration files"
+    # "Press Control to select multiple files"
+    set files [tk_getOpenFile -multiple 1 -initialdir /home/sk/configbundles/sk1]
+    if {$files ne ""} {
+        set ::model::Gui_selected_files $files
+        $selectLbl configure -text "[llength $::model::Gui_selected_files] file(s) selected"
+        $importBtn configure -state normal
+    }
+}
+
 
 # this is csp coroutine
 proc ::from_file::ImportClicked {tab} {
@@ -61,11 +86,8 @@ proc ::from_file::ImportClicked {tab} {
         set pconf $tab.$name
     
         set profileid [name2id $newprofilename]
-        # "Select configuration files"
-        # "Press Control to select multiple files"
-        set files [tk_getOpenFile -multiple 1 -initialdir /home/sk/configbundles/sk1]
-        if {$files ne ""} {
-            set tempdir [copy2temp $files]
+        if {$::model::Gui_selected_files ne ""} {
+            set tempdir [copy2temp $::model::Gui_selected_files]
             puts stderr "tempdir: $tempdir"
     
             set ovpn [convert-config $tempdir]
