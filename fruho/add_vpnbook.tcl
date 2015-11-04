@@ -13,8 +13,8 @@ namespace eval ::vpnbook {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username ""
-    variable password ""
+    variable username "vpnbook"
+    variable password "hehECh4R"
 
 }
 
