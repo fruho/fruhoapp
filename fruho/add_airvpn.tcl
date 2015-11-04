@@ -13,8 +13,8 @@ namespace eval ::airvpn {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username jreynman@yahoo.com
-    variable password nobel7
+    variable username ""
+    variable password ""
 
 }
 
@@ -47,6 +47,8 @@ proc ::airvpn::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+    hypertext $pconf.link "Buy account on <https://fruho.com/redirect?url=https://airvpn.org/plans/><airvpn.org>"
+
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -60,6 +62,7 @@ proc ::airvpn::create-import-frame {tab} {
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -131,9 +134,11 @@ proc ::airvpn::ImportClicked {tab} {
     }
 }
 
-
+lappend ::model::Supported_providers {150 airvpn}
+if 0 {
 dict set model::Supported_providers airvpn {
+    order 150
     name $::airvpn::name
     dispname $::airvpn::dispname
 }
-
+}

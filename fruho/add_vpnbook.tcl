@@ -47,8 +47,7 @@ proc ::vpnbook::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    hypertext $pconf.link "Get free account from <https://www.vpnbook.com/freevpn><vpnbook.com>"
-    #hyperlink $pconf.link -command [list launchBrowser "https://www.vpnbook.com/freevpn"] -text "Get free account from vpnbook.com"
+    hypertext $pconf.link "Get free account from <https://fruho.com/redirect?url=https://www.vpnbook.com/freevpn><vpnbook.com>"
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -134,9 +133,12 @@ proc ::vpnbook::ImportClicked {tab} {
     }
 }
 
-
+lappend ::model::Supported_providers {020 vpnbook}
+if 0 {
 dict set model::Supported_providers vpnbook {
+    order 20
     name $::vpnbook::name
     dispname $::vpnbook::dispname
+}
 }
 

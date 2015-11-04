@@ -14,7 +14,7 @@ namespace eval ::mullvad {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username 438696513567
+    variable username ""
     variable password ""
 
 }
@@ -45,6 +45,7 @@ proc ::mullvad::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+    hypertext $pconf.link "Create account on <https://fruho.com/redirect?url=https://mullvad.net/en/account/><mullvad.net>"
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -55,6 +56,7 @@ proc ::mullvad::create-import-frame {tab} {
     grid $pconf.usernameinput -row 5 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.usernameinfo -row 5 -column 2 -sticky news -pady 5
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -124,8 +126,13 @@ proc ::mullvad::ImportClicked {tab} {
 }
 
 
+lappend ::model::Supported_providers {030 mullvad}
+
+if 0 {
 dict set model::Supported_providers mullvad {
+    order 30
     name $::mullvad::name
     dispname $::mullvad::dispname
+}
 }
 

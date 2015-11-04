@@ -43,6 +43,8 @@ proc ::from_file::create-import-frame {tab} {
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
 
+    hypertext $pconf.link "<https://fruho.com/howto/1><How to get config files?>"
+
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -52,6 +54,7 @@ proc ::from_file::create-import-frame {tab} {
     grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
     grid $pconf.selectinfo -row 4 -column 2 -sticky news
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -302,9 +305,12 @@ proc ::from_file::create-slist {endpoints} {
 }
 
 
-
+lappend ::model::Supported_providers {900 from_file}
+if 0 {
 dict set model::Supported_providers from_file {
+    order 900
     name $::from_file::name
     dispname $::from_file::dispname
+}
 }
 

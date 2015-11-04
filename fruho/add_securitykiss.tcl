@@ -13,8 +13,8 @@ namespace eval ::securitykiss {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username client04284903
-    variable password 97d7a6cc3
+    variable username ""
+    variable password ""
 
 }
 
@@ -42,6 +42,7 @@ proc ::securitykiss::create-import-frame {tab} {
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
     # must use non-ttk label for proper animated gif display
     label $pconf.importline.img
+    hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?url=https://securitykiss.com/pricing/><securitykiss.com>"
     img place 24/empty $pconf.importline.img
     ttk::label $pconf.importline.msg
     grid $pconf.importline.button -row 0 -column 0 -padx 10
@@ -60,6 +61,7 @@ proc ::securitykiss::create-import-frame {tab} {
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -131,9 +133,13 @@ proc ::securitykiss::ImportClicked {tab} {
     }
 }
 
+lappend ::model::Supported_providers {010 securitykiss}
 
+if 0 {
 dict set model::Supported_providers securitykiss {
+    order 10
     name $::securitykiss::name
     dispname $::securitykiss::dispname
+}
 }
 

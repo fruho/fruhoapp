@@ -154,8 +154,7 @@ if 0 {    variable Profiles [dict create fruho {
     ######################################## 
     # Supported providers
     ######################################## 
-    # e.g.: from_file {name from_file dispname "From File"}
-    #
+    # actually pairs: (order, provider)
     variable Supported_providers {}
 }
 

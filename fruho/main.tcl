@@ -34,7 +34,7 @@ source [file join [file dir [info script]] model.tcl]
 foreach f [glob -nocomplain -directory [file dir [info script]] add_*.tcl] {
     source $f
 }
-set ::model::Supported_providers [lsort -decreasing -stride 2 $::model::Supported_providers]
+set ::model::Supported_providers [lsort $::model::Supported_providers]
 
 # print to stderr
 proc pq {id args} {
@@ -1858,7 +1858,8 @@ proc frame-addvpnprovider {p} {
     $plist column #0 -width 50 -anchor nw -stretch 0
     $plist column 0 -width 140 -anchor w
 
-    foreach provider [dict keys $::model::Supported_providers] {
+    foreach op $::model::Supported_providers {
+        lassign $op order provider
         $provider add-to-treeview-plist $plist
         $provider create-import-frame $tab
     }

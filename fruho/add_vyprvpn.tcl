@@ -47,6 +47,9 @@ proc ::vyprvpn::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+
+    hypertext $pconf.link "Create account on <https://fruho.com/redirect?url=https://www.goldenfrog.com/vyprvpn/buy-vpn><VyprVPN website>"
+
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -60,6 +63,7 @@ proc ::vyprvpn::create-import-frame {tab} {
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -131,9 +135,14 @@ proc ::vyprvpn::ImportClicked {tab} {
     }
 }
 
+lappend ::model::Supported_providers {110 vyprvpn}
 
+
+if 0 {
 dict set model::Supported_providers vyprvpn {
+    order 110
     name $::vyprvpn::name
     dispname $::vyprvpn::dispname
+}
 }
 

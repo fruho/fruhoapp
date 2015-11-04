@@ -18,8 +18,8 @@ namespace eval ::hideipvpn {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username tgqyqzai
-    variable password behdfuuu
+    variable username ""
+    variable password ""
 
 }
 
@@ -39,10 +39,10 @@ proc ::hideipvpn::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::label $pconf.usernamelabel -text "VPN username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
-    ttk::label $pconf.usernameinfo -foreground grey -text ""
+    ttk::label $pconf.usernameinfo -foreground grey -text "e.g. uwdnowqd"
     ttk::label $pconf.passwordlabel -text "VPN password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
-    ttk::label $pconf.passwordinfo -foreground grey
+    ttk::label $pconf.passwordinfo -foreground grey -text "e.g. eowguqie"
     ttk::frame $pconf.importline
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
     # must use non-ttk label for proper animated gif display
@@ -52,6 +52,9 @@ proc ::hideipvpn::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+
+    hypertext $pconf.link "Create account on <https://fruho.com/redirect?url=https://billing.hideipvpn.com/free-trial-vpn/><HideIpVPN website>"
+
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -65,6 +68,7 @@ proc ::hideipvpn::create-import-frame {tab} {
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
@@ -138,9 +142,12 @@ proc ::hideipvpn::ImportClicked {tab} {
     }
 }
 
-
+lappend ::model::Supported_providers {050 hideipvpn}
+if 0 {
 dict set model::Supported_providers hideipvpn {
+    order 50
     name $::hideipvpn::name
     dispname $::hideipvpn::dispname
 }
 
+}
