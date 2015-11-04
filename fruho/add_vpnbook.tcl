@@ -38,7 +38,6 @@ proc ::vpnbook::create-import-frame {tab} {
     ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
-    hyperlink $pconf.link -command [list launchBrowser "https://www.vpnbook.com/freevpn"] -text "Get free account from vpnbook.com"
     ttk::frame $pconf.importline
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
     # must use non-ttk label for proper animated gif display
@@ -48,6 +47,8 @@ proc ::vpnbook::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
+    hypertext $pconf.link "Get free account from <https://www.vpnbook.com/freevpn><vpnbook.com>"
+    #hyperlink $pconf.link -command [list launchBrowser "https://www.vpnbook.com/freevpn"] -text "Get free account from vpnbook.com"
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -60,8 +61,8 @@ proc ::vpnbook::create-import-frame {tab} {
     grid $pconf.passwordlabel -row 7 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
-    grid $pconf.link -sticky news -columnspan 3 -pady 10
     grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
         
