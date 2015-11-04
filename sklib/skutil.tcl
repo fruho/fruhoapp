@@ -771,6 +771,66 @@ proc hyperlink {name args} {
 }
 
 
+# Mixed text with hyperlinks
+# Create a composite frame of plain label text with hyperlinks as a single line
+# usage:
+# hypertext .my.widget.htext "plain text <http://my.url><my link name> other plain text"
+# for <optional my link name> to be treated as link name and not plain text there must be no space between <http://my.url> and <optional...>
+proc hypertext {hw composite} {
+    # first tokenize to "plain text" and "[bracketed]" tokens
+    set tokens [regexp -all -inline {[^<>]+} $composite]
+    # pairs is the list with the following semantics:
+    # {url1 label1 url2 label2 ...}
+    # where url is empty it's the plain text
+    set pairs {}
+    set previous_token ""
+    #puts stderr "TOKENS: $tokens"
+    foreach token $tokens {
+        set isurl [regexp {http.*} $token]
+        set previous_isurl [regexp {http.*} $previous_token]
+        set spacestart [string is space -strict [string index $token 0]]
+        #puts stderr "TOKEN: $token. previous_isurl=$previous_isurl, spacestart=$spacestart"
+        if {$previous_isurl} {
+            # if after the url there is a space starting string we use last url as label
+            if {$spacestart} {
+                lappend pairs $previous_token
+            } else {
+                lappend pairs $token
+            }
+        } else {
+            if {$isurl} {
+                lappend pairs $token
+            } else {
+                lappend pairs ""
+                lappend pairs $token
+            }
+        }
+        set previous_token $token
+    }
+    # in case the composite ends with url append repeating label
+    set previous_isurl [regexp {http.*} $previous_token]
+    if {$previous_isurl} {
+        lappend pairs $previous_token
+    }
+    #puts stderr "PAIRS: $pairs"
+    set count 0
+    frame $hw
+    foreach {url lbl} $pairs {
+        if {$url eq ""} {
+            label $hw.item$count -text $lbl
+        } else {
+            hyperlink $hw.item$count -command [list launchBrowser $url] -text $lbl
+        }
+        grid $hw.item$count -column $count -row 0 -sticky w
+        incr count
+    }
+
+    return $hw
+}
+
+
+
+
 proc launchBrowser {url} {
     try {
         if {$::tcl_platform(platform) eq "windows"} {

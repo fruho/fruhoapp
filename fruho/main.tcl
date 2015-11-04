@@ -1728,27 +1728,18 @@ proc frame-usage-meter {p} {
 
 proc frame-toolbar {p} {
     set tb [ttk::frame $p.tb -borderwidth 0 -relief raised]
-    #ttk::button $tb.feedback
-    #img place 16/feedback  $tb.feedback 
-    #grid $tb.feedback -column 0 -row 0 -sticky w
-    label $tb.appealimg
-    img place 16/bang $tb.appealimg
-    label $tb.appeal1 -text "Help improve this program. Provide your"
-    hyperlink $tb.appeal2 -command [list launchBrowser "https://fruho.com/geo"] -text "feedback."
-    label $tb.appeal3 -text "We listen."
-
+    hypertext $tb.improve "Help improve this program. Provide your <https://fruho.com/geo><feedback.> We listen."
     button $tb.options -relief flat -command OptionsClicked
     img place 24/options  $tb.options
-    grid $tb.appealimg -column 0 -row 0 -sticky w
-    grid $tb.appeal1 -column 1 -row 0 -sticky w
-    grid $tb.appeal2 -column 2 -row 0 -sticky w
-    grid $tb.appeal3 -column 3 -row 0 -sticky w
-    grid $tb.options -column 4 -row 0 -sticky e
+    label $tb.bang
+    img place 16/bang $tb.bang
+    grid $tb.bang -row 0 -column 0 -sticky w
+    grid $tb.improve -row 0 -column 1 -sticky w
+    grid $tb.options -row 0 -column 2 -sticky e
     grid $tb -padx 5 -sticky news
     grid columnconfigure $tb $tb.options -weight 1
     return $tb
 }
-
 
 
 # create ip info panel in parent p
