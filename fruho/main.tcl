@@ -2922,6 +2922,10 @@ proc ffread-loop {} {
                         {^Initialization Sequence Completed} {
                         }
                         {AUTH: Received control message: AUTH_FAILED} {
+                            set profile [current-profile]
+                            # on AUTH_FAILED delete cached auth credentials for this profile
+                            dict-set-trim ::model::Profiles $profile cache_custom_auth_user ""
+                            dict-set-trim ::model::Profiles $profile cache_custom_auth_pass ""
                             $::model::Chan_openvpn_fail <- "AUTH_FAILED Wrong username/password"
                         }
                     }
