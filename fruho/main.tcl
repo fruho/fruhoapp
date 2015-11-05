@@ -1517,8 +1517,8 @@ proc dash-gauge {p} {
     label $db.speedgaugelabel
     label $db.speedlabel -text "Speed" -anchor e -font $font1
     label $db.speedlabelunit
-    label $db.trafficlabel -text "Traffic" -anchor e -font $font1
-    label $db.trafficlabelunit
+    label $db.totallabel -text "Total" -anchor e -font $font1
+    label $db.totallabelunit
    
     # up row
     label $db.linkup -image [img load 32/uplink] -anchor e
@@ -1545,8 +1545,8 @@ proc dash-gauge {p} {
     grid $db.speedgaugelabel -row 1 -column [incr col] -sticky news -padx 10 -pady 5
     grid $db.speedlabel -row 1 -column [incr col] -sticky news -padx 10 -pady 5
     grid $db.speedlabelunit -row 1 -column [incr col] -sticky news -pady 5
-    grid $db.trafficlabel -row 1 -column [incr col] -sticky news -padx 10 -pady 5
-    grid $db.trafficlabelunit -row 1 -column [incr col] -sticky news -pady 5
+    grid $db.totallabel -row 1 -column [incr col] -sticky news -padx 10 -pady 5
+    grid $db.totallabelunit -row 1 -column [incr col] -sticky news -pady 5
 
     set col -1
     grid $db.linkup -row 3 -column [incr col] -sticky news -padx 10 -pady 5
