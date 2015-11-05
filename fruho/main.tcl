@@ -1647,7 +1647,7 @@ proc dash-gauge-update {} {
     set db .c.tabsetenvelope.nb.$profileid.db
 
     if {[winfo exists $db]} {
-        lassign [traffic-speed-calc] totalup totaldown speedup speeddown
+        lassign [total-speed-calc] totalup totaldown speedup speeddown
         set speedup_f [format-mega $speedup]
         $db.speedup configure -text [lindex $speedup_f 0]
         $db.speedupunit configure -text [lindex $speedup_f 1]B/s
@@ -2939,7 +2939,7 @@ proc ffread-loop {} {
                         set profileid [dict-pop $meta profile {}]
                         set totalup [dict-pop $stat mgmt_rwrite 0]
                         set totaldown [dict-pop $stat mgmt_rread 0]
-                        traffic-speed-store $totalup $totaldown
+                        total-speed-store $totalup $totaldown
         
                         if {[is-connecting-status] && [current-profile] eq $profileid} {
                             dash-gauge-update
@@ -2961,9 +2961,9 @@ proc ffread-loop {} {
 
 
 # takes latest traffic measurements from stat and saves in the model
-proc traffic-speed-store {totalup totaldown} {
+proc total-speed-store {totalup totaldown} {
     set ms [clock milliseconds]
-    set n $::model::previous_traffic_probes
+    set n $::model::previous_total_probes
 
     # prevent adding duplicate measurements what might result in time difference = 0 and division by zero later
     if {[lindex $::model::Previous_total_tstamp end] != $ms} {
@@ -2978,7 +2978,7 @@ proc traffic-speed-store {totalup totaldown} {
 }
 
 # returns totalup, totaldown and moving averages of speedup and speeddown
-proc traffic-speed-calc {} {
+proc total-speed-calc {} {
     set totalup 0
     set totaldown 0
     set speedupavg 0

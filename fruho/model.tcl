@@ -123,12 +123,12 @@ if 0 {    variable Profiles [dict create fruho {
     variable Connstatus_change_tstamp 0
 
 
-    # Last N measurements of traffic up, down and timestamps for currently connected profile
-    variable Previous_trafficup {}
-    variable Previous_trafficdown {}
-    variable Previous_traffic_tstamp {}
-    # number of traffic probes saved and used for moving average - this is to be saved in config
-    variable previous_traffic_probes 5
+    # Last N measurements of total up, down and timestamps for currently connected profile
+    variable Previous_totalup {}
+    variable Previous_totaldown {}
+    variable Previous_total_tstamp {}
+    # number of total/traffic probes saved and used for moving average - this is to be saved in config
+    variable previous_total_probes 5
 
 
     variable Gui_openvpn_connection_timeout 25
