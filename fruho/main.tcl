@@ -1527,8 +1527,8 @@ proc dash-gauge {p} {
     place $db.speedupgauge.fill -x 0 -y 0
     label $db.speedup -text "0" -anchor e -font $font2 
     label $db.speedupunit -text "kbps" -anchor w -font $font1
-    label $db.trafficup -text "0" -anchor e -font $font2
-    label $db.trafficupunit -text "MB" -anchor w -font $font1
+    label $db.totalup -text "0" -anchor e -font $font2
+    label $db.totalupunit -text "MB" -anchor w -font $font1
 
     # down row
     label $db.linkdown -image [img load 32/downlink] -anchor e
@@ -1537,8 +1537,8 @@ proc dash-gauge {p} {
     place $db.speeddowngauge.fill -x 0 -y 0
     label $db.speeddown -text "0" -anchor e -font $font2
     label $db.speeddownunit -text "kbps" -anchor w -font $font1
-    label $db.trafficdown -text "0" -anchor e -font $font2
-    label $db.trafficdownunit -text "MB" -anchor w -font $font1
+    label $db.totaldown -text "0" -anchor e -font $font2
+    label $db.totaldownunit -text "MB" -anchor w -font $font1
 
     set col -1
     grid $db.linkdir -row 1 -column [incr col] -sticky news -padx 10 -pady 5
@@ -1553,16 +1553,16 @@ proc dash-gauge {p} {
     grid $db.speedupgauge -row 3 -column [incr col] -sticky w -padx 10 -pady 5
     grid $db.speedup -row 3 -column [incr col] -sticky news -padx 10 -pady 5
     grid $db.speedupunit -row 3 -column [incr col] -sticky news -pady 5
-    grid $db.trafficup -row 3 -column [incr col] -sticky news -padx 10 -pady 5
-    grid $db.trafficupunit -row 3 -column [incr col] -sticky news -pady 5
+    grid $db.totalup -row 3 -column [incr col] -sticky news -padx 10 -pady 5
+    grid $db.totalupunit -row 3 -column [incr col] -sticky news -pady 5
 
     set col -1
     grid $db.linkdown -row 5 -column [incr col] -sticky news -padx 10 -pady 5
     grid $db.speeddowngauge -row 5 -column [incr col] -sticky w -padx 10 -pady 5
     grid $db.speeddown -row 5 -column [incr col] -sticky news -padx 10 -pady 5
     grid $db.speeddownunit -row 5 -column [incr col] -sticky news -pady 5
-    grid $db.trafficdown -row 5 -column [incr col] -sticky news -padx 10 -pady 5
-    grid $db.trafficdownunit -row 5 -column [incr col] -sticky news -pady 5
+    grid $db.totaldown -row 5 -column [incr col] -sticky news -padx 10 -pady 5
+    grid $db.totaldownunit -row 5 -column [incr col] -sticky news -pady 5
 
     set col -1
     grid columnconfigure $db [incr col] -minsize 40
@@ -1647,7 +1647,7 @@ proc dash-gauge-update {} {
     set db .c.tabsetenvelope.nb.$profileid.db
 
     if {[winfo exists $db]} {
-        lassign [traffic-speed-calc] trafficup trafficdown speedup speeddown
+        lassign [traffic-speed-calc] totalup totaldown speedup speeddown
         set speedup_f [format-mega $speedup]
         $db.speedup configure -text [lindex $speedup_f 0]
         $db.speedupunit configure -text [lindex $speedup_f 1]B/s
@@ -1659,12 +1659,12 @@ proc dash-gauge-update {} {
         #puts stderr "speedup $speedup   width $width    rgb: $rgb"
         $db.speedupgauge.fill configure -background $rgb -width $width
     
-        set trafficup_f [format-mega $trafficup]
-        $db.trafficup configure -text [lindex $trafficup_f 0]
-        $db.trafficupunit configure -text [lindex $trafficup_f 1]B
-        set trafficdown_f [format-mega $trafficdown]
-        $db.trafficdown configure -text [lindex $trafficdown_f 0]
-        $db.trafficdownunit configure -text [lindex $trafficdown_f 1]B
+        set totalup_f [format-mega $totalup]
+        $db.totalup configure -text [lindex $totalup_f 0]
+        $db.totalupunit configure -text [lindex $totalup_f 1]B
+        set totaldown_f [format-mega $totaldown]
+        $db.totaldown configure -text [lindex $totaldown_f 0]
+        $db.totaldownunit configure -text [lindex $totaldown_f 1]B
     
         lassign [speed-gauge-calc $speeddown 2000000 100] width rgb
         #puts stderr "speeddown $speeddown   width $width    rgb: $rgb"
@@ -2937,9 +2937,9 @@ proc ffread-loop {} {
                     if {$meta ne ""} {
                         set ::model::Current_sitem $meta
                         set profileid [dict-pop $meta profile {}]
-                        set trafficup [dict-pop $stat mgmt_rwrite 0]
-                        set trafficdown [dict-pop $stat mgmt_rread 0]
-                        traffic-speed-store $trafficup $trafficdown
+                        set totalup [dict-pop $stat mgmt_rwrite 0]
+                        set totaldown [dict-pop $stat mgmt_rread 0]
+                        traffic-speed-store $totalup $totaldown
         
                         if {[is-connecting-status] && [current-profile] eq $profileid} {
                             dash-gauge-update
@@ -2961,32 +2961,32 @@ proc ffread-loop {} {
 
 
 # takes latest traffic measurements from stat and saves in the model
-proc traffic-speed-store {trafficup trafficdown} {
+proc traffic-speed-store {totalup totaldown} {
     set ms [clock milliseconds]
     set n $::model::previous_traffic_probes
 
     # prevent adding duplicate measurements what might result in time difference = 0 and division by zero later
-    if {[lindex $::model::Previous_traffic_tstamp end] != $ms} {
-        lappend ::model::Previous_traffic_tstamp $ms
-        lappend ::model::Previous_trafficup $trafficup
-        lappend ::model::Previous_trafficdown $trafficdown
+    if {[lindex $::model::Previous_total_tstamp end] != $ms} {
+        lappend ::model::Previous_total_tstamp $ms
+        lappend ::model::Previous_totalup $totalup
+        lappend ::model::Previous_totaldown $totaldown
         # this will keep max n+1 items
-        set ::model::Previous_traffic_tstamp [lrange $::model::Previous_traffic_tstamp end-$n end]
-        set ::model::Previous_trafficup [lrange $::model::Previous_trafficup end-$n end]
-        set ::model::Previous_trafficdown [lrange $::model::Previous_trafficdown end-$n end]
+        set ::model::Previous_total_tstamp [lrange $::model::Previous_total_tstamp end-$n end]
+        set ::model::Previous_totalup [lrange $::model::Previous_totalup end-$n end]
+        set ::model::Previous_totaldown [lrange $::model::Previous_totaldown end-$n end]
     }
 }
 
-# returns trafficup, trafficdown and moving averages of speedup and speeddown
+# returns totalup, totaldown and moving averages of speedup and speeddown
 proc traffic-speed-calc {} {
-    set trafficup 0
-    set trafficdown 0
+    set totalup 0
+    set totaldown 0
     set speedupavg 0
     set speeddownavg 0
-    if {$::model::Previous_traffic_tstamp ne ""} {
-        set difft [lbetween {a b} $::model::Previous_traffic_tstamp {expr {$b-$a}}]
-        set diffup [lbetween {a b} $::model::Previous_trafficup {expr {$b-$a}}]
-        set diffdown [lbetween {a b} $::model::Previous_trafficdown {expr {$b-$a}}]
+    if {$::model::Previous_total_tstamp ne ""} {
+        set difft [lbetween {a b} $::model::Previous_total_tstamp {expr {$b-$a}}]
+        set diffup [lbetween {a b} $::model::Previous_totalup {expr {$b-$a}}]
+        set diffdown [lbetween {a b} $::model::Previous_totaldown {expr {$b-$a}}]
 
         if {[llength $difft] == [llength $diffup]} {
             # list of speeds
@@ -2994,11 +2994,11 @@ proc traffic-speed-calc {} {
             set speeddown [lmap tx $difft x $diffdown {expr {1000*double($x)/double($tx)}}]
             set speedupavg [expr max(0, round([average-simple $speedup]))]
             set speeddownavg [expr max(0, round([average-simple $speeddown]))]
-            set trafficup [lindex $::model::Previous_trafficup end]
-            set trafficdown [lindex $::model::Previous_trafficdown end]
+            set totalup [lindex $::model::Previous_totalup end]
+            set totaldown [lindex $::model::Previous_totaldown end]
         }
     }
-    return [list $trafficup $trafficdown $speedupavg $speeddownavg]
+    return [list $totalup $totaldown $speedupavg $speeddownavg]
 }
 
 
@@ -3247,9 +3247,9 @@ proc connstatus-reported {stat} {
 }
 
 proc connection-windup {} {
-    set ::model::Previous_trafficup {}
-    set ::model::Previous_trafficdown {}
-    set ::model::Previous_traffic_tstamp {}
+    set ::model::Previous_totalup {}
+    set ::model::Previous_totaldown {}
+    set ::model::Previous_total_tstamp {}
     trigger-geo-loc 1000
     ffwrite stop
 }
