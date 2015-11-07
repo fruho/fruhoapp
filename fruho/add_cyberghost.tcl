@@ -27,7 +27,7 @@ proc ::cyberghost::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::frame $pconf.select
     ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf.select.msg $pconf.importline.button]
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf]
     grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
     grid columnconfigure $pconf.select 0 -weight 1

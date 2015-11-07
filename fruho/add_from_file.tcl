@@ -27,7 +27,7 @@ proc ::from_file::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::frame $pconf.select
     ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf.select.msg $pconf.importline.button]
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf]
     grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
     grid columnconfigure $pconf.select 0 -weight 1
@@ -65,14 +65,14 @@ proc ::from_file::add-to-treeview-plist {plist} {
 }
 
 
-proc ::from_file::SelectFileClicked {selectLbl importBtn} {
+proc ::from_file::SelectFileClicked {pconf} {
     # "Select configuration files"
     # "Press Control to select multiple files"
     set files [tk_getOpenFile -multiple 1 -initialdir /home/sk/configbundles/sk1]
     if {$files ne ""} {
         set ::model::Gui_selected_files $files
-        $selectLbl configure -text "[llength $::model::Gui_selected_files] file(s) selected"
-        $importBtn configure -state normal
+        $pconf.select.msg configure -text "[llength $::model::Gui_selected_files] file(s) selected"
+        $pconf.importline.button configure -state normal
     }
 }
 
@@ -83,8 +83,15 @@ proc ::from_file::ImportClicked {tab name} {
         set newprofilename [set ::${name}::newprofilename]
         set pconf $tab.$name
     
+        img place 24/spin $pconf.importline.img
+        $pconf.importline.msg configure -text "Importing configuration from file"
+        $pconf.importline.button configure -state disabled
+
+        after 1000 set ::uuu 0
+        vwait ::uuu
+
         set profileid [name2id $newprofilename]
-        if {$::model::Gui_selected_files ne ""} {
+        if {[are-selected-files-correct $::model::Gui_selected_files]} {
             set tempdir [copy2temp $::model::Gui_selected_files]
             puts stderr "tempdir: $tempdir"
     
@@ -102,16 +109,38 @@ proc ::from_file::ImportClicked {tab name} {
             dict set ::model::Profiles $profileid plans [dict create plainid $plan]
             dict set ::model::Profiles $profileid profilename $newprofilename
 
+
             go update-bulk-sitem $profileid
         
             # when repainting tabset select the newly created tab
             set ::model::selected_profile [name2id $newprofilename]
             tabset-profiles .c.tabsetenvelope
+            img place 24/empty $pconf.importline.img
+            $pconf.importline.button configure -state normal
+            $pconf.importline.msg configure -text ""
+        } else {
+            img place 24/empty $pconf.importline.img
+            $pconf.importline.button configure -state normal
+            $pconf.importline.msg configure -text "Selected files are incorrect"
         }
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
 }
+
+proc are-selected-files-correct {files} {
+    if {$files eq ""} {
+        return 0
+    }
+    foreach f $files {
+        set ext [file extension $f]
+        if {$ext in {.doc .mp3 .png .gif .jpg}} {
+            return 0
+        }
+    }
+    return 1
+}
+
 
 # copy and unzip in temporary folder
 proc ::from_file::copy2temp {files} {
