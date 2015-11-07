@@ -1097,6 +1097,17 @@ proc get-faas-config {} {
 
 
 
+
+# add_vpnprovider importline utility
+# btnstate: disabled or normal
+# img: spin or empty
+proc importline-update {pconf msg btnstate img} {
+    img place 24/$img $pconf.importline.img
+    $pconf.importline.msg configure -text $msg
+    $pconf.importline.button configure -state $btnstate
+}
+
+
 # Actually this is a profile tab but let's call it "addprovider" tab
 proc is-addprovider-tab-selected {} {
     return [is-addprovider [current-profile]]

@@ -83,12 +83,7 @@ proc ::from_file::ImportClicked {tab name} {
         set newprofilename [set ::${name}::newprofilename]
         set pconf $tab.$name
     
-        img place 24/spin $pconf.importline.img
-        $pconf.importline.msg configure -text "Importing configuration from file"
-        $pconf.importline.button configure -state disabled
-
-        after 1000 set ::uuu 0
-        vwait ::uuu
+        importline-update $pconf "Importing configuration from file" disabled spin
 
         set profileid [name2id $newprofilename]
         if {[are-selected-files-correct $::model::Gui_selected_files]} {
@@ -115,13 +110,9 @@ proc ::from_file::ImportClicked {tab name} {
             # when repainting tabset select the newly created tab
             set ::model::selected_profile [name2id $newprofilename]
             tabset-profiles .c.tabsetenvelope
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text ""
+            importline-update $pconf "" normal empty
         } else {
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text "Selected files are incorrect"
+            importline-update $pconf "Selected files are incorrect" normal empty
         }
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]

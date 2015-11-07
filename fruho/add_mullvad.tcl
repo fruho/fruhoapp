@@ -83,26 +83,18 @@ proc ::mullvad::ImportClicked {tab} {
         set profileid [name2id $newprofilename]
 
         set pconf $tab.$name
-        img place 24/spin $pconf.importline.img
-        $pconf.importline.msg configure -text "Importing configuration from $dispname"
-        $pconf.importline.button configure -state disabled
+        importline-update $pconf "Importing configuration from $dispname" disabled spin
     
         set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
         if {$result != 200} {
-            set msg [http2importline $result]
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text $msg
+            importline-update $pconf [http2importline $result] normal empty
             return
         }
         puts stderr "VPAPI-CONFIG-DIRECT completed"
 
         set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
         if {$result != 200} {
-            set msg [http2importline $result]
-            img place 24/empty $pconf.importline.img
-            $pconf.importline.button configure -state normal
-            $pconf.importline.msg configure -text $msg
+            importline-update $pconf [http2importline $result] normal empty
             return
         }
         dict set ::model::Profiles $profileid vpapi_username $username
@@ -112,9 +104,7 @@ proc ::mullvad::ImportClicked {tab} {
 
         puts stderr "VPAPI-PLANS-DIRECT completed"
     
-        img place 24/empty $pconf.importline.img
-        $pconf.importline.msg configure -text ""
-        $pconf.importline.button configure -state normal
+        importline-update $pconf "" normal empty
         set ::${name}::username ""
     
         # when repainting tabset select the newly created tab
