@@ -92,6 +92,10 @@ proc ::from_file::ImportClicked {tab name} {
     
             set ovpn [convert-config $tempdir]
             puts stderr "\n$ovpn\n"
+            if {$ovpn eq ""} {
+                importline-update $pconf "No openvpn config in selected files" normal empty
+                return
+            }
             set ovpnfile [ovpndir $profileid config.ovpn]
             spit $ovpnfile $ovpn
             # parse config now in order to extract separate cert files
@@ -99,6 +103,10 @@ proc ::from_file::ImportClicked {tab name} {
     
             set slist [extract-servers $tempdir]
             puts stderr "slist: $slist"
+            if {$slist eq ""} {
+                importline-update $pconf "No server candidates in selected files" normal empty
+                return
+            }
     
             set plan [dict create name $newprofilename timelimit [dict create start 0 period month nop 1000000] trafficlimit [dict create used 0 quota 1000000000] slist $slist]
             dict set ::model::Profiles $profileid plans [dict create plainid $plan]
@@ -119,13 +127,14 @@ proc ::from_file::ImportClicked {tab name} {
     }
 }
 
+# to eliminate obvious wrong file candidates upfront
 proc are-selected-files-correct {files} {
     if {$files eq ""} {
         return 0
     }
     foreach f $files {
         set ext [file extension $f]
-        if {$ext in {.doc .mp3 .png .gif .jpg}} {
+        if {$ext in {.doc .xls .ppt .mp3 .m4a .wav .wma .mpg .mp4 .avi .png .gif .jpg}} {
             return 0
         }
     }
@@ -247,7 +256,7 @@ proc ::from_file::extract-servers {tempdir} {
     }
     set endpoints [lunique $endpoints]
 
-    #TODO resolve hostsnames
+    #TODO resolve hostnames
 
 
     set slist {}
