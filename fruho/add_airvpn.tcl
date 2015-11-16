@@ -47,7 +47,7 @@ proc ::airvpn::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    hypertext $pconf.link "Buy account on <https://fruho.com/redirect?url=https://airvpn.org/plans/><airvpn.org>"
+    hypertext $pconf.link "Buy account on <https://fruho.com/redirect?urlid=airvpn&cn=$::model::Cn><airvpn.org>"
 
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1

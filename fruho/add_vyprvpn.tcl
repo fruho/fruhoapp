@@ -48,7 +48,7 @@ proc ::vyprvpn::create-import-frame {tab} {
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
 
-    hypertext $pconf.link "Create account on <https://fruho.com/redirect?url=https://www.goldenfrog.com/vyprvpn/buy-vpn><VyprVPN website>"
+    hypertext $pconf.link "Create account on <https://fruho.com/redirect?urlid=vyprvpn&cn=$::model::Cn><VyprVPN website>"
 
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1

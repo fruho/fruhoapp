@@ -45,7 +45,7 @@ proc ::mullvad::create-import-frame {tab} {
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    hypertext $pconf.link "Create account on <https://fruho.com/redirect?url=https://mullvad.net/en/account/><mullvad.net>"
+    hypertext $pconf.link "Create account on <https://fruho.com/redirect?urlid=mullvad&cn=$::model::Cn><mullvad.net>"
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1

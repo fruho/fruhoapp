@@ -42,7 +42,7 @@ proc ::securitykiss::create-import-frame {tab} {
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
     # must use non-ttk label for proper animated gif display
     label $pconf.importline.img
-    hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?url=https://securitykiss.com/pricing/><securitykiss.com>"
+    hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?urlid=securitykiss&cn=$::model::Cn><securitykiss.com>"
     img place 24/empty $pconf.importline.img
     ttk::label $pconf.importline.msg
     grid $pconf.importline.button -row 0 -column 0 -padx 10
