@@ -99,7 +99,7 @@ proc fpm-arch {arch} {
 proc unzip {zipfile {destdir .}} {
   set mntfile [vfs::zip::Mount $zipfile $zipfile]
   foreach f [glob [file join $zipfile *]] {
-    file copy $f $destdir
+    file copy -force $f $destdir
   }
   vfs::zip::Unmount $mntfile $zipfile
 }

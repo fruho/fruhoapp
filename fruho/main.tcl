@@ -2005,6 +2005,7 @@ proc CheckForUpdatesClicked {uframe} {
     }
 }
 
+# update checkforupdates status message label and icon
 proc checkforupdates-status {uframe img msg} {
     try {
         $uframe.status configure -text "  $msg"
@@ -2055,7 +2056,34 @@ proc checkforupdates-refresh {uframe quiet} {
 }
 
 
+# Trigger the upgrade procedure which looks like follows:
+# - fruho client to download zip, unzip to DIR: UPGRADEDIR/$version
+# - send upgrade DIR command to fruhod daemon
+# - fruhod daemon seamlessly upgrades and restarts
+# - fruho client reconnects and receives fruhod version which should be > fruho client version now
+# - fruho client reacts with seamlessly upgrading itself and restarts
+# - fruho client reconnects to daemon and receives fruhod version which should be == fruho client version, so the upgrade ends
+
 proc UpdateNowClicked {uframe} {
+    try {
+        set about .options_dialog.nb.about
+        $uframe.button configure -state disabled
+
+        set version $::model::Latest_version
+        if {[int-ver $version] <= [int-ver [build-version]]} {
+            log Nothing to update. This build version is [build-version]. Latest version is $version
+            return
+        }
+        set dir [file join $::model::UPGRADEDIR $version]
+        file mkdir $dir
+        go download-get-update $uframe $dir
+    } on error {e1 e2} {
+        log "$e1 $e2"
+    }
+}
+
+# @deprecated
+proc UpdateNowClicked_OLD {uframe} {
     try {
         set about .options_dialog.nb.about
         $uframe.button configure -state disabled
@@ -2138,6 +2166,46 @@ proc wait-for-items {collector n timeout command} {
 }
 
 
+proc download-get-update {uframe dir} {
+    try {
+        set zipfile $dir/update.zip
+        if {![file isfile $zipfile]} {
+            checkforupdates-status $uframe 16/downloading "Downloading..."
+            channel {chout cherr} 1
+            # get-update - download the zip file
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /get-update?[this-pcv] -gettofile $zipfile -indiv_timeout 60000
+            log download-get-update started to $zipfile
+            select {
+                <- $chout {
+                    <- $chout
+                    puts stderr [log download-get-update OK]
+                    checkforupdates-status $uframe 16/downloading "Checking..."
+                }
+                <- $cherr {
+                    set err [<- $cherr]
+                    puts stderr [log download-get-update ERROR: $err]
+                    checkforupdates-status $uframe 16/error "Problem with the download"
+                }
+            }
+        }
+        if {[file isfile $zipfile]} {
+            checkforupdates-status $uframe 16/updating "Updating..."
+            unzip $zipfile $dir
+            # give n seconds for the upgrade process (daemon upgrade, reconnect, client upgrade/restart), otherwise report update failed
+            after 10000 [list checkforupdates-status $uframe 16/warning "Update failed"]
+            puts stderr "PREPARE UPGRADE from $dir"
+            ffwrite "upgrade $dir"
+            puts stderr "UPGRADING from $dir"
+        }
+    } on error {e1 e2} {
+        log "$e1 $e2"
+    } finally {
+        catch {
+            $chout close
+            $cherr close
+        }
+    }
+}
 
 proc download-latest-skt {collector url filepath} {
     try {
@@ -2903,18 +2971,16 @@ proc ffread-loop {} {
                             # fruho client to restart itself if daemon already upgraded and not too often
                             if {[int-ver $daemon_version] > [int-ver [build-version]]} {
                                 set sha [sha1sum [this-binary]]
-                                # just restart itself from the new binary - daemon should have replaced it
                                 # restart only if different binaries
                                 if {$sha ne $::model::Running_binary_fingerprint} {
                                     model save
-                                    # execl replaces the calling process image with a new process image. 
-                                    # This has the effect of running a new program with the process ID of the calling process. 
+                                    set err [seamless-upgrade $dir/fruhod.bin [this-binary]]
                                     # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
-                                    # kill [id process]
-                                    # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
-                                    execl [this-binary]
                                     kill [id process]
+                                } else {
+                                    log Aborted. Trying to seamless-upgrade to the same binary
                                 }
+
                             }
                         }
                         {^OpenVPN ERROR} {

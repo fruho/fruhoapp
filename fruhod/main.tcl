@@ -274,7 +274,8 @@ proc ffread {} {
                 # $dir should contain fruhod.bin, fruho.bin and their signatures
                 set dir [lindex $tokens 1]
                 # if upgrade is successfull it never returns (execl replace program)
-                set err [upgrade $dir]
+                #set err [upgrade $dir]
+                set err [seamless-upgrade $dir/fruhod.bin [this-binary]]
                 ffwrite ctrl [log "Could not upgrade from $dir: $err"]
             }
             default {
@@ -330,6 +331,7 @@ proc dns-is-resolv-fruhod-generated {} {
 }
 
 
+# @deprecated use seamless-upgrade instead
 # fruhod only to verify signature and replace binaries
 # dir - folder where new fruhod.bin and fruho.bin and signatures are placed
 proc upgrade {dir} {

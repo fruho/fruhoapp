@@ -297,7 +297,7 @@ proc unzip {zipfile {destdir .}} {
     package require vfs::zip
     set mntfile [vfs::zip::Mount $zipfile $zipfile]
     foreach f [glob [file join $zipfile *]] {
-      file copy $f $destdir
+      file copy -force $f $destdir
     }
     vfs::zip::Unmount $mntfile $zipfile
 }
@@ -902,8 +902,71 @@ proc files-exist {files} {
 
 # returns file path to the currently running binary assuming it is a starkit
 proc this-binary {} {
+    # this actually returns the file path not dir path
+    # since starkit is treated as a dir
+    # info script returns <starkit_file>/main.tcl
     return [file dirname [file normalize [info script]]]
 }
+
+
+# seamless upgrade (wishful thinking huh?)
+# Used separately by client and daemon. 
+# On success, it never returns (program is restarted within the same process by execl)
+# On failure, revert changes and return descriptive error
+# Steps:
+# - verify signature (signature file is implied from src file by suffixing it with .sig)
+# - backup dst to /tmp
+# - replace and chmod src to dst
+# - execl - restart by replacing process image in memory
+proc seamless-upgrade {src dst} {
+    try {
+        # assertion to allow only upgrade to the location of the running process
+        if {$dst ne [this-binary]} {
+            return [log seamless-upgrade to dst: $dst failed. Can only upgrade to the running process location [this-binary]]
+        }
+        foreach f [list $src $src.sig $dst] {
+            # use "exists" instead of "isfile" since when run as starkit the process does not see itself as a file
+            if {![file exists $f]} {
+                return [log seamless-upgrade failed because $f file not found]
+            }
+        }
+        # backup id
+        set bid [rand-big]
+        # do backup dst
+        set bf /tmp/[file tail $dst]-backup-$bid
+        if {![verify-signature /etc/fruhod/keys/signer_public.pem $src]} {
+            return [log Upgrade from $src failed because signature verification failed]
+        }
+        # replace dst with src
+        # rename is necessary to prevent "cannot create regular file ...: Text file busy" error
+        # we must use external system commands the file command does not work on the currently running program
+        exec mv $dst $bf
+        exec cp -f $src $dst
+        exec chmod u+rwx,go+rx $src
+        # execl replaces the calling process image with a new process image. 
+        # This has the effect of running a new program with the process ID of the calling process. 
+        # if this does not fail it never returns
+        # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
+        # kill [id process]
+        # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
+        execl $dst
+    } on error {e1 e2} {
+        # restore binaries from the backup path
+        catch {
+            if {[file isfile $bf]} {
+                file delete -force $dst
+                file rename -force $bf $dst
+            }
+        }
+        log $e1 $e2
+        return $e1
+    }
+    return "unexpected seamless-upgrade error"
+}
+
+
+
+
 
 
 # best effort sha1sum, return empty string if failed
