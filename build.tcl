@@ -122,7 +122,7 @@ proc test {} {
 
 
 
-
+# convert commit log into dict commit# => commit_line
 proc parse-commits {commits} {
     set commit2msg [dict create]
     set prev ""
@@ -179,6 +179,7 @@ proc github-upload-artifacts {upload_url gituser gitpass} {
     return $artifacts
 }
 
+# generate html with list of commits/changes
 proc html-changelog {commit2msg} {
     set html ""
     dict for {commit msg} $commit2msg {
@@ -216,21 +217,44 @@ proc release {gituser} {
 
 }
 
+proc push-update {os arch tohost} {
+    lappend ::auto_path [file normalize ./lib/generic]
+    package require skutil
+    set updatedir [file normalize ./build/update/$::FRUHO_VERSION/$os-$arch]
+    file mkdir $updatedir
+    set fc [file normalize ./build/fruho/$os-$arch/fruho.bin]
+    set fd [file normalize ./build/fruhod/$os-$arch/fruhod.bin]
+    set privkey [file normalize ../confidential/sk/keys/fruho/signer/signer_private.pem]
+
+    # sign the binaries
+    create-signature $privkey $fc
+    create-signature $privkey $fd
+
+    # zip the bundle
+    set zip $updatedir/update.zip 
+    ex rm $zip
+    ex zip -j $zip $fc $fc.sig $fd $fd.sig
+
+
+    # ssh push
+    set remotezip /tmp/fruho-update-$::FRUHO_VERSION-$os-$arch-update.zip
+    puts "Uploading $remotezip to $tohost"
+    ex scp $zip $tohost:$remotezip
+}
+
+
 
 set ::FRUHO_VERSION 0.0.7
-
 prepare-lib sklib 0.0.0
-
-
-
 #build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
-
 build-fruho linux [this-arch]
 build-fruhod linux [this-arch]
 build-deb-rpm [this-arch]
+
+#push-update linux [this-arch] vbox_123
 
 #release hypatia2
 

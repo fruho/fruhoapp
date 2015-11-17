@@ -2069,12 +2069,11 @@ proc UpdateNowClicked {uframe} {
         set about .options_dialog.nb.about
         $uframe.button configure -state disabled
 
-        set version $::model::Latest_version
-        if {[int-ver $version] <= [int-ver [build-version]]} {
-            log Nothing to update. This build version is [build-version]. Latest version is $version
+        if {[int-ver $::model::Latest_version] <= [int-ver [build-version]]} {
+            log Nothing to update. This build version is [build-version]. Latest version is $::model::Latest_version
             return
         }
-        set dir [file join $::model::UPGRADEDIR $version]
+        set dir [file join $::model::UPGRADEDIR $::model::Latest_version]
         file mkdir $dir
         go download-get-update $uframe $dir
     } on error {e1 e2} {
@@ -2966,19 +2965,20 @@ proc ffread-loop {} {
                         }
                         {^version (\S+) (.*)$} {
                             set daemon_version [lindex $details 1]
-                            puts stderr "DAEMON VERSION: $daemon_version"
-                            puts stderr "FRUHO CLIENT VERSION: [build-version]"
+                            puts stderr [log "DAEMON VERSION: $daemon_version"]
+                            puts stderr [log "FRUHO CLIENT VERSION: [build-version]"]
                             # fruho client to restart itself if daemon already upgraded and not too often
                             if {[int-ver $daemon_version] > [int-ver [build-version]]} {
-                                set sha [sha1sum [this-binary]]
                                 # restart only if different binaries
-                                if {$sha ne $::model::Running_binary_fingerprint} {
+                                if {[sha1sum [this-binary]] ne $::model::Running_binary_fingerprint} {
+                                    puts stderr [log Different binaries detected]
                                     model save
-                                    set err [seamless-upgrade $dir/fruhod.bin [this-binary]]
+                                    # Restart itself - the fruho client binary was replaced by the daemon
                                     # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
+                                    execl [this-binary]
                                     kill [id process]
                                 } else {
-                                    log Aborted. Trying to seamless-upgrade to the same binary
+                                    puts stderr [log Aborted. Version mismatch between daemon and client detected but client sees the same binary]
                                 }
 
                             }

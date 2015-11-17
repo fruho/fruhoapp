@@ -275,8 +275,31 @@ proc ffread {} {
                 set dir [lindex $tokens 1]
                 # if upgrade is successfull it never returns (execl replace program)
                 #set err [upgrade $dir]
+                
+                # First try to upgrade the daemon
                 set err [seamless-upgrade $dir/fruhod.bin [this-binary]]
-                ffwrite ctrl [log "Could not upgrade from $dir: $err"]
+                if {$err ne ""} {
+                    ffwrite ctrl [log "Could not upgrade [this-binary] from $dir: $err"]
+                    return
+                }
+                # Try to upgrade fruho client only if daemon succeeded
+                # We need to do it here in fruhod because we need root
+                set err [seamless-upgrade $dir/fruho.bin /usr/local/bin/fruho.bin]
+                if {$err ne ""} {
+                    ffwrite ctrl [log "Could not upgrade /usr/local/bin/fruho.bin from $dir: $err"]
+                    return
+                }
+
+                # Restart the daemon only if both succeeded
+                # Fruho client will restart itself after detecting version mismatch
+
+                # execl replaces the calling process image with a new process image. 
+                # This has the effect of running a new program with the process ID of the calling process. 
+                # if this does not fail it never returns
+                # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
+                # kill [id process]
+                # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
+                execl [this-binary]
             }
             default {
                 ffwrite ctrl "Unknown command"

@@ -911,19 +911,14 @@ proc this-binary {} {
 
 # seamless upgrade (wishful thinking huh?)
 # Used separately by client and daemon. 
-# On success, it never returns (program is restarted within the same process by execl)
+# On success return empty string
 # On failure, revert changes and return descriptive error
 # Steps:
 # - verify signature (signature file is implied from src file by suffixing it with .sig)
 # - backup dst to /tmp
 # - replace and chmod src to dst
-# - execl - restart by replacing process image in memory
 proc seamless-upgrade {src dst} {
     try {
-        # assertion to allow only upgrade to the location of the running process
-        if {$dst ne [this-binary]} {
-            return [log seamless-upgrade to dst: $dst failed. Can only upgrade to the running process location [this-binary]]
-        }
         foreach f [list $src $src.sig $dst] {
             # use "exists" instead of "isfile" since when run as starkit the process does not see itself as a file
             if {![file exists $f]} {
@@ -942,14 +937,10 @@ proc seamless-upgrade {src dst} {
         # we must use external system commands the file command does not work on the currently running program
         exec mv $dst $bf
         exec cp -f $src $dst
-        exec chmod u+rwx,go+rx $src
-        # execl replaces the calling process image with a new process image. 
-        # This has the effect of running a new program with the process ID of the calling process. 
-        # if this does not fail it never returns
-        # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
-        # kill [id process]
-        # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
-        execl $dst
+        log Changing permissions: chmod u+rwx,go+rx $dst
+        set chmodout [exec chmod u+rwx,go+rx $dst 2>@1]
+        log $chmodout
+        return
     } on error {e1 e2} {
         # restore binaries from the backup path
         catch {
