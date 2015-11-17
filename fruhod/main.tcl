@@ -287,6 +287,7 @@ proc ffread {} {
                 set err [seamless-upgrade $dir/fruho.bin /usr/local/bin/fruho.bin]
                 if {$err ne ""} {
                     ffwrite ctrl [log "Could not upgrade /usr/local/bin/fruho.bin from $dir: $err"]
+                    #TODO shouldn't we revert daemon upgrade in this case?
                     return
                 }
 
@@ -351,69 +352,6 @@ proc dns-read-resolv {} {
 
 proc dns-is-resolv-fruhod-generated {} {
     return [string match *$::model::Resolv_marker* [dns-read-resolv]]
-}
-
-
-# @deprecated use seamless-upgrade instead
-# fruhod only to verify signature and replace binaries
-# dir - folder where new fruhod.bin and fruho.bin and signatures are placed
-proc upgrade {dir} {
-    # replace the current program with new version - effectively restart from the new binary, PID is preserved
-    try {
-        if {![file isdirectory $dir]} {
-            return [log Upgrade failed because there is no $dir directory]
-        }
-        # backup id
-        set bid [rand-big]
-        set fruhodpath /usr/local/sbin/fruhod.bin
-        set newfruhod [file join $dir fruhod.bin]
-        set bfruhod /tmp/fruhod.bin-backup-$bid
-        set fpath /usr/local/bin/fruho.bin
-        set newf [file join $dir fruho.bin]
-        set bf /tmp/fruho.bin-backup-$bid
-
-        if {![verify-signature /etc/fruhod/keys/signer_public.pem $newfruhod]} {
-            return [log Upgrade failed because fruhod signature verification failed]
-        }
-        if {![verify-signature /etc/fruhod/keys/signer_public.pem $newf]} {
-            return [log Upgrade failed because fruho client signature verification failed]
-        }
-        # replace fruhod
-        # rename is necessary to prevent "cannot create regular file ...: Text file busy" error
-        # we must use external system commands for fruhod since the file command does not work on the currently running program
-        exec mv $fruhodpath $bfruhod
-        exec cp -f $newfruhod $fruhodpath
-        exec chmod u+rwx,go+rx $fruhodpath
-        # replace fruho.bin
-        # so fruho.bin is deployed here with root rights, but fruho client must restart itself => add permissions to group and others
-        file rename -force $fpath $bf
-        file copy -force $newf $fpath
-        file attributes $fpath -permissions u+rwx,go+rx
-
-        # execl replaces the calling process image with a new process image. 
-        # This has the effect of running a new program with the process ID of the calling process. 
-        # if this does not fail it never returns
-        # On Windows, where the fork command is not available, execl starts a new process and returns the process id.
-        execl /usr/local/sbin/fruhod.bin
-
-    } on error {e1 e2} {
-        # restore binaries from the backup path
-        catch {
-            if {[file isfile $bfruhod]} {
-                file delete -force $fruhodpath
-                file rename -force $bfruhod $fruhodpath
-            }
-        }
-        catch {
-            if {[file isfile $bf]} {
-                file delete -force $fpath
-                file rename -force $bf $fpath
-            }
-        }
-        log $e1 $e2
-        return $e1
-    }
-    return "upgrade unexpected error"
 }
 
 

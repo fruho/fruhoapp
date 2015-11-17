@@ -1897,7 +1897,7 @@ proc ProviderListSelected {tab} {
 
 
 proc window-sibling {w name} {
-    set parent [join [lrange [split $w .] 0 end-1] .]
+    set parent [winfo parent $w]
     return $parent.$name
 }
 
@@ -1996,8 +1996,7 @@ proc setDialogSize {window} {
 
 proc CheckForUpdatesClicked {uframe} {
     try {
-        set about .options_dialog.nb.about
-        $about.checkforupdates configure -state disabled
+        [winfo parent $uframe].checkforupdates configure -state disabled
         checkforupdates-status $uframe 16/spin "Checking for updates"
         go check-for-updates $uframe
     } on error {e1 e2} {
@@ -2066,8 +2065,8 @@ proc checkforupdates-refresh {uframe quiet} {
 
 proc UpdateNowClicked {uframe} {
     try {
-        set about .options_dialog.nb.about
         $uframe.button configure -state disabled
+        [winfo parent $uframe].checkforupdates configure -state disabled
 
         if {[int-ver $::model::Latest_version] <= [int-ver [build-version]]} {
             log Nothing to update. This build version is [build-version]. Latest version is $::model::Latest_version
@@ -2081,89 +2080,6 @@ proc UpdateNowClicked {uframe} {
     }
 }
 
-# @deprecated
-proc UpdateNowClicked_OLD {uframe} {
-    try {
-        set about .options_dialog.nb.about
-        $uframe.button configure -state disabled
-
-        set version $::model::Latest_version
-        if {[int-ver $version] <= [int-ver [build-version]]} {
-            return
-        }
-
-        set dir [file join $::model::UPGRADEDIR $version]
-        file mkdir $dir
-        set platform [this-os]-[this-arch]
-        set files {fruho.bin.sig fruhod.bin.sig fruho.bin fruhod.bin}
-        # csp channel for collecting info about downloaded files
-        channel collector
-        #FIXME: files-exist should take full paths
-        if {![files-exist $files]} {
-            checkforupdates-status $uframe 16/downloading "Downloading..."
-            foreach f $files {
-                set filepath [file join $dir $f]
-                go download-latest-skt $collector /latest-skt/$version/$platform/$f $filepath
-            }
-            # given timeout is per item
-            go wait-for-items $collector [llength $files] 60000 [list upgrade-downloaded $dir $uframe]
-        } else {
-            upgrade-downloaded $dir $uframe ok
-        }
-    } on error {e1 e2} {
-        log "$e1 $e2"
-    }
-}
-
-# fruhod only to verify signature and replace binaries and restart itself
-# fruho client prepares upgrade dir, initializes upgrade and restarts itself
-proc upgrade-downloaded {dir uframe status} {
-    log upgrade-downloaded $status
-    if {$status eq "ok"} { 
-        checkforupdates-status $uframe 16/updating "Updating..."
-        # give 5 seconds to restart itself, otherwise report update failed
-        after 5000 [list checkforupdates-status $uframe 16/warning "Update failed"]
-        puts stderr "PREPARE UPGRADE from $dir"
-        ffwrite "upgrade $dir"
-        puts stderr "UPGRADING from $dir"
-    } else {
-        checkforupdates-status $uframe 16/error "Problem with the download"
-    }
-           
-}
-
-# csp coroutine to collect messages from collector channel
-# if $n items received within individual $timeouts
-# then call "$command ok". Otherwise "$command timeout"
-proc wait-for-items {collector n timeout command} {
-    try {
-        for {set i 0} {$i < $n} {incr i} {
-            timer t $timeout
-            select {
-                <- $collector {
-                    set item [<- $collector]
-                    log "wait-for-items collected item=$item for n=$n timeout=$timeout command=$command"
-                }
-                <- $t {
-                    log "wait-for-items timed out for n=$n timeout=$timeout command=$command"
-                    <- $t
-                    {*}$command timeout
-                    return
-                }
-            }
-        }
-        log "wait-for-items completed successfully for n=$n timeout=$timeout command=$command"
-        {*}$command ok
-        return
-    } on error {e1 e2} {
-        log "$e1 $e2"
-    } finally {
-        catch {
-            $collector close
-        }
-    }
-}
-
 
 proc download-get-update {uframe dir} {
     try {
@@ -2171,8 +2087,8 @@ proc download-get-update {uframe dir} {
         if {![file isfile $zipfile]} {
             checkforupdates-status $uframe 16/downloading "Downloading..."
             channel {chout cherr} 1
-            # get-update - download the zip file
-            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /get-update?[this-pcv] -gettofile $zipfile -indiv_timeout 60000
+            puts stderr [log get-update: download /get-update?[this-pcv]&u=$::model::Latest_version]
+            curl-dispatch $chout $cherr bootstrap:10443 -urlpath /get-update?[this-pcv]&u=$::model::Latest_version -gettofile $zipfile -indiv_timeout 60000
             log download-get-update started to $zipfile
             select {
                 <- $chout {
@@ -2188,7 +2104,7 @@ proc download-get-update {uframe dir} {
             }
         }
         if {[file isfile $zipfile]} {
-            checkforupdates-status $uframe 16/updating "Updating..."
+            checkforupdates-status $uframe 16/spin "Updating..."
             unzip $zipfile $dir
             # give n seconds for the upgrade process (daemon upgrade, reconnect, client upgrade/restart), otherwise report update failed
             after 10000 [list checkforupdates-status $uframe 16/warning "Update failed"]
@@ -2205,34 +2121,6 @@ proc download-get-update {uframe dir} {
         }
     }
 }
-
-proc download-latest-skt {collector url filepath} {
-    try {
-        channel {chout cherr} 1
-        # wget the binary
-        curl-dispatch $chout $cherr bootstrap:10443 -urlpath $url -gettofile $filepath
-        log "download-latest-skt started $url $filepath"
-        select {
-            <- $chout {
-                <- $chout
-                $collector <- $filepath
-                puts stderr [log "download-latest-skt $url $filepath OK"]
-            }
-            <- $cherr {
-                set err [<- $cherr]
-                puts stderr [log "download-latest-skt $url $filepath ERROR: $err"]
-            }
-        }
-    } on error {e1 e2} {
-        log "$e1 $e2"
-    } finally {
-        catch {
-            $chout close
-            $cherr close
-        }
-    }
-}
-
 
 proc OptionsClicked {} {
     try {
