@@ -52,21 +52,12 @@ namespace eval ::model {
     # latest fruho version to upgrade from check-for-updates
     variable Latest_version 0
 
-
     # The built-in interim profile Fruho
-    # while profile may contain multiple plans/slists, we need to store current slist as well since it depends on current time (through active plan selection)
-if 0 {    variable Profiles [dict create fruho {
-        profilename Fruho
-        plans {id1 {name INTERIM timelimit {start 123456789 period month nop 3} trafficlimit {used 50000000 quota 400000000} slist {{id 1 ccode DE country Germany city Darmstadt ip 46.165.221.230 ovses {{proto udp port 123} {proto tcp port 443}}} {id 4 ccode FR country France city Paris ip 37.59.65.55 ovses {{proto udp port 56789}}}} selected_sitem_id ""}}
-    }]
-}
-    
-
     # !!! Be careful in operating on model::Profiles (iterating, listing, etc). Prevent shimmering.
     # Internally it should be represented as a dictionary in order to properly save in inicfg::save
     # You can use defensive copy [dict replace $::model::Profiles]
     # Always use [dict for] instead of [foreach]
-    variable Profiles [dict create fruho [dict create profilename Fruho]]
+    variable Profiles [dict create fruho [dict create profilename Fruho provider fruho]]
 
     # profile ids marked as removed
     variable removed_profiles {}
@@ -110,6 +101,9 @@ if 0 {    variable Profiles [dict create fruho {
     variable layout_barh 8
 
     variable Geo_loc ""
+
+    # delay in requesting /loc external IP info - must be adjustable by the user
+    variable geo_loc_delay 1000
 
     variable Mainstatusline [dict create]
     variable Mainstatusline_spin empty

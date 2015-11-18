@@ -101,6 +101,7 @@ proc ::mullvad::ImportClicked {tab} {
         dict set ::model::Profiles $profileid vpapi_host $host
         dict set ::model::Profiles $profileid vpapi_port $port
         dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
+        dict set ::model::Profiles $profileid provider $name
 
         puts stderr "VPAPI-PLANS-DIRECT completed"
     

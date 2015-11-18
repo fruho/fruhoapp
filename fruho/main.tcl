@@ -1739,7 +1739,7 @@ proc frame-usage-meter {p} {
 
 proc frame-toolbar {p} {
     set tb [ttk::frame $p.tb -borderwidth 0 -relief raised]
-    hypertext $tb.improve "Help improve this program. Provide your <https://fruho.com/geo><feedback.> We listen."
+    hypertext $tb.improve "Help improve this program. Provide your <https://fruho.com/contact><feedback.> We listen."
     button $tb.options -relief flat -command OptionsClicked
     img place 24/options  $tb.options
     label $tb.bang
@@ -1820,9 +1820,10 @@ proc tabset-profiles {p} {
         set tab [frame-profile $nb $profileid]
         set pdict [dict get $::model::Profiles $profileid]
         set tabname [dict-pop $pdict profilename $profileid]
-        $nb add $tab -text $tabname -sticky news
+        set provider [dict-pop $pdict provider ""]
+        $nb add $tab -compound left -text $tabname -image [img load 16/logo_$provider]
     }
-    $nb add [frame-addvpnprovider $nb] -text "Add VPN Provider..."
+    $nb add [frame-addvpnprovider $nb] -compound left -text "Add VPN Provider..." -image [img load 16/add]
     grid $nb -sticky news -padx 10 -pady 10 
     select-profile $nb
     set now [model now]
@@ -3166,7 +3167,7 @@ proc connstatus-loop {} {
                             log "newstatus: $newstatus"
                             model connstatus $newstatus
                             if {$newstatus eq "connected"} {
-                                trigger-geo-loc 1000
+                                trigger-geo-loc $::model::geo_loc_delay
                                 # this cancels the timeout
                                 set chtimeout $empty_channel
                             }
@@ -3219,7 +3220,7 @@ proc connection-windup {} {
     set ::model::Previous_totalup {}
     set ::model::Previous_totaldown {}
     set ::model::Previous_total_tstamp {}
-    trigger-geo-loc 1000
+    trigger-geo-loc $::model::geo_loc_delay
     ffwrite stop
 }
 

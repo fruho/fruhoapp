@@ -168,7 +168,7 @@ proc github-create-release {gituser gitpass} {
 
 proc github-upload-artifacts {upload_url gituser gitpass} {
     set artifacts {}
-    foreach file [concat [glob dist/linux-*/*.deb] [glob dist/linux-*/*.rpm]] {
+    foreach file [concat [glob dist/linux-*/*$::FRUHO_VERSION*.deb] [glob dist/linux-*/*$::FRUHO_VERSION*.rpm]] {
         set filename [file tail $file]
         set uurl $upload_url?name=$filename
         set uploaded [exec -ignorestderr curl -XPOST --header "Content-Type: application/zip" --data-binary @$file $uurl -u "$gituser:$gitpass"]
@@ -232,9 +232,8 @@ proc push-update {os arch tohost} {
 
     # zip the bundle
     set zip $updatedir/update.zip 
-    ex rm $zip
+    ex rm -f $zip
     ex zip -j $zip $fc $fc.sig $fd $fd.sig
-
 
     # ssh push
     set remotezip /tmp/fruho-update-$::FRUHO_VERSION-$os-$arch-update.zip
@@ -244,7 +243,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.7
+set ::FRUHO_VERSION 0.0.9
 prepare-lib sklib 0.0.0
 #build-total
 #package require i18n
@@ -253,6 +252,10 @@ prepare-lib sklib 0.0.0
 build-fruho linux [this-arch]
 build-fruhod linux [this-arch]
 build-deb-rpm [this-arch]
+
+#build-fruho linux ix86
+#build-fruhod linux ix86
+#build-deb-rpm ix86
 
 #push-update linux [this-arch] vbox_123
 

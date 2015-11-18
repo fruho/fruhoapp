@@ -111,6 +111,7 @@ proc ::from_file::ImportClicked {tab name} {
             set plan [dict create name $newprofilename timelimit [dict create start 0 period month nop 1000000] trafficlimit [dict create used 0 quota 1000000000] slist $slist]
             dict set ::model::Profiles $profileid plans [dict create plainid $plan]
             dict set ::model::Profiles $profileid profilename $newprofilename
+            dict set ::model::Profiles $profileid provider $name
 
 
             go update-bulk-sitem $profileid
