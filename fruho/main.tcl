@@ -553,6 +553,7 @@ proc period-start {plan tstamp} {
     error "Could not determine period-start for plan $plan and tstamp $tstamp"
 }
 
+# in seconds
 proc clock-add-periods {start n period} {
     if {[string is integer -strict $period]} {
         return [expr {$start + $n * $period}]
@@ -566,6 +567,10 @@ proc plan-start {plan} {
     return [dict-pop $plan timelimit start [model now]]
 }
 
+# in seconds, may be negative
+proc plan-time-left {plan} {
+    return [expr {[plan-end $plan] - [model now]}]
+}
 
 proc plan-end {plan} {
     set period [dict-pop $plan timelimit period day]
@@ -1301,105 +1306,11 @@ proc gui-update {} {
         profile-tabset-update
         set now [model now]
         dash-plan-update $now
-        dash-time-update $now
         dash-gauge-update
     } on error {e1 e2} {
         puts stderr [log "$e1 $e2"]
     }
 }
-
-proc usage-meter-update-blank {} {
-    set um .c.tabsetenvelope.nb.[current-profile].um
-    set ::model::Gui_planline [_ "Plan ?"]
-    set ::model::Gui_usedlabel [_ "Used"]
-    set ::model::Gui_elapsedlabel [_ "Elapsed"]
-    set ::model::Gui_usedsummary ""
-    set ::model::Gui_elapsedsummary ""
-    $um.usedbar.fill configure -width 0
-    $um.elapsedbar.fill configure -width 0
-}
-
-
-# TODO add different types of usage meter
-proc usage-meter-update {tstamp} {
-    try {
-        set profile [current-profile]
-        set um .c.tabsetenvelope.nb.$profile.um
-        set planid [current-planid $tstamp $profile]
-        if {$planid eq ""} {
-            usage-meter-update-blank
-            return
-        }
-        set plan [dict get $::model::Profiles $profile plans $planid]
-        set planname [dict-pop $plan name ?]
-        set plan_start [plan-start $plan]
-        set plan_end [plan-end $plan]
-        set until [format-date $plan_end]
-        set period [dict-pop $plan timelimit period day]
-        if {$period eq "month"} {
-            set ::model::Gui_usedlabel [_ "This month used"]
-            set ::model::Gui_elapsedlabel [_ "This month elapsed"]
-            set ::model::Gui_planline [_ "Plan {0} valid until {1}" $planname $until]
-        } elseif {$period eq "day"} {
-            set ::model::Gui_usedlabel [_ "This day used"]
-            set ::model::Gui_elapsedlabel [_ "This day elapsed"]
-            set ::model::Gui_planline [_ "Plan {0}" $planname]
-        #TODO need one more else for period in milliseconds
-        } else {
-            usage-meter-update-blank
-            return
-        }
-        
-        set used [dict-pop $plan trafficlimit used 0]
-        set quota [dict-pop $plan trafficlimit quota 0]
-        if {$quota <= 0} {
-            usage-meter-update-blank
-            return
-        }
-        if {$used > $quota} {
-            set used $quota
-        }
-        if {$used < 0} {
-            usage-meter-update-blank
-            return
-        }
-        set ::model::Gui_usedsummary "[format-mega $used] / [format-mega $quota 1]"
-        set period_start [period-start $plan $tstamp]
-        set period_end [period-end $plan $tstamp]
-        #puts stderr "plan_start: [clock format $plan_start]"
-        #puts stderr "period_start: [clock format $period_start]"
-        #puts stderr "period_end: [clock format $period_end]"
-        set period_elapsed [period-elapsed $plan $tstamp]
-        set period_length [period-length $plan $tstamp]
-        if {$period_elapsed <= 0} {
-            usage-meter-update-blank
-            return
-        }
-        if {$period_length <= 0} {
-            usage-meter-update-blank
-            return
-        }
-        if {$period_elapsed > $period_length} {
-            set period_elapsed $period_length
-        }
-        set ::model::Gui_elapsedsummary "[format-interval $period_elapsed] / [format-interval $period_length 1]"
-    
-        ##################################
-        # update bars
-    
-        set barw $::model::layout_barw
-        set wu [expr {$barw * $used / $quota}]
-        if {$wu < 0} {
-        }
-        $um.usedbar.fill configure -width $wu
-        set we [expr {$barw * $period_elapsed / $period_length}]
-        $um.elapsedbar.fill configure -width $we
-    } on error {e1 e2} {
-        log "$e1 $e2"
-    }
-}
-
-
 
 # convert big number to the suffixed (K/M/G/T) representation 
 # with max 3 significant digits plus optional dot
@@ -1469,21 +1380,22 @@ proc format-date {sec} {
 
 proc frame-dashboard {p} {
     dash-plan $p
-    dash-time $p
     dash-gauge $p
 }
 
 proc dash-plan {p} {
     set dbplan [frame $p.dbplan]
+    set f1 [dynafont -size 12]
+    set f2 [dynafont -weight bold -size 12]
     frame $dbplan.planname
-    label $dbplan.planname.lbl -text "Plan:"
-    label $dbplan.planname.val -font [dynafont -weight bold]
+    label $dbplan.planname.lbl -text "Plan:" -font $f1
+    label $dbplan.planname.val -font $f2
     grid $dbplan.planname.lbl -row 0 -column 0 -sticky w
     grid $dbplan.planname.val -row 0 -column 1 -sticky w
 
     frame $dbplan.planexpiry
-    label $dbplan.planexpiry.lbl
-    label $dbplan.planexpiry.val -font [dynafont -weight bold]
+    label $dbplan.planexpiry.lbl -font $f1
+    label $dbplan.planexpiry.val -font $f2
     grid $dbplan.planexpiry.lbl -row 0 -column 0 -sticky e
     grid $dbplan.planexpiry.val -row 0 -column 1 -sticky e
  
@@ -1493,25 +1405,6 @@ proc dash-plan {p} {
     grid $dbplan.planexpiry -row 1 -column 1 -sticky e
     grid $dbplan -padx 10 -pady 10 -sticky news
 }
-
-proc dash-time {p} {
-    set bg3 $::model::layout_bg3
-    set fgelapsed $::model::layout_fgelapsed
-    set barw $::model::layout_barw
-    set barh $::model::layout_barh
-
-    set dbtime [frame $p.dbtime]
-
-    label $dbtime.elapsedlabel -text "Timeline:" ;#-background #bbbbbb 
-    frame $dbtime.elapsedbar -background $bg3 -width $barw -height $barh
-    frame $dbtime.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
-    place $dbtime.elapsedbar.fill -x 0 -y 0
-    label $dbtime.elapsedsummary ;#-background #bbbbbb
-    grid $dbtime.elapsedlabel $dbtime.elapsedbar $dbtime.elapsedsummary -row 2 -padx 5 -pady 5 -sticky w
-    grid $dbtime
-
-}
-
 
 proc dash-gauge {p} {
     set db [frame $p.db]
@@ -1536,7 +1429,7 @@ proc dash-gauge {p} {
     frame $db.speedupgauge -background $gaugebg -width $gaugew -height $gaugeh
     frame $db.speedupgauge.fill -height $gaugeh
     place $db.speedupgauge.fill -x 0 -y 0
-    label $db.speedup -text "0" -anchor e -font $font2 
+    label $db.speedup -text "0" -anchor e -font $font2
     label $db.speedupunit -text "kbps" -anchor w -font $font1
     label $db.totalup -text "0" -anchor e -font $font2
     label $db.totalupunit -text "MB" -anchor w -font $font1
@@ -1602,53 +1495,26 @@ proc dash-plan-update {tstamp} {
             set planname [dict-pop $plan name UNKNOWN]
             set plan_start [plan-start $plan]
             set plan_end [plan-end $plan]
-            set until [format-date $plan_end]
-            set expires "Expires:"
+            set timeleft_sec [plan-time-left $plan]
+            set timeleft [format-interval $timeleft_sec]
+            set expires "Time left:"
+            set ecolor black
             # if longer than 10 years
             if {$plan_end - $plan_start > 315000000} {
-                set until ""
+                set timeleft ""
                 set expires ""
             }
         } else {
             set planname "No active plan"
-            set until ""
+            set timeleft "Expired"
             set expires ""
+            set ecolor #e04006
         }
         $dbplan.planname.val configure -text $planname
         $dbplan.planexpiry.lbl configure -text $expires
-        $dbplan.planexpiry.val configure -text $until
+        $dbplan.planexpiry.val configure -text $timeleft -foreground $ecolor
     }
 }
-
-proc dash-time-update {tstamp} {
-    set profileid [current-profile]
-    if {[is-addprovider-tab-selected]} {
-        return
-    }
-    set dbtime .c.tabsetenvelope.nb.$profileid.dbtime
-
-    if {[winfo exists $dbtime]} {
-        set planid [current-planid $tstamp $profileid]
-        set plan [dict-pop $::model::Profiles $profileid plans $planid {}]
-        #set period_start [period-start $plan $tstamp]
-        #set period_end [period-end $plan $tstamp]
-        set period_elapsed [period-elapsed $plan $tstamp]
-        set period_length [period-length $plan $tstamp]
-        if {$period_elapsed > 0 && $period_length > 0 && $period_elapsed > $period_length} {
-            set period_elapsed $period_length
-        }
-        set barw $::model::layout_barw
-        set summary ""
-        set we 0
-        if {$period_elapsed > 0 && $period_length > 0} {
-            set summary "[format-interval $period_elapsed] / [format-interval $period_length 1]"
-            set we [expr {$barw * $period_elapsed / $period_length}]
-        }
-        $dbtime.elapsedbar.fill configure -width $we
-        $dbtime.elapsedsummary configure -text $summary
-    }
-}
-
 
 proc dash-gauge-update {} {
     if {[is-addprovider-tab-selected]} {
@@ -1657,25 +1523,37 @@ proc dash-gauge-update {} {
     set profileid [current-profile]
     set db .c.tabsetenvelope.nb.$profileid.db
 
+    switch [model connstatus] {
+        connected {set gaugestate normal}
+        connecting {set gaugestate normal}
+        default {set gaugestate disabled}
+    }
+
     if {[winfo exists $db]} {
+
+        $db.speedlabel configure -state $gaugestate
+        $db.totallabel configure -state $gaugestate
+        $db.linkup configure -state $gaugestate
+        $db.linkdown configure -state $gaugestate
+
         lassign [total-speed-calc] totalup totaldown speedup speeddown
         set speedup_f [format-mega $speedup]
-        $db.speedup configure -text [lindex $speedup_f 0]
-        $db.speedupunit configure -text [lindex $speedup_f 1]B/s
+        $db.speedup configure -text [lindex $speedup_f 0] -state $gaugestate
+        $db.speedupunit configure -text [lindex $speedup_f 1]B/s -state $gaugestate
         set speeddown_f [format-mega $speeddown]
-        $db.speeddown configure -text [lindex $speeddown_f 0]
-        $db.speeddownunit configure -text [lindex $speeddown_f 1]B/s
+        $db.speeddown configure -text [lindex $speeddown_f 0] -state $gaugestate
+        $db.speeddownunit configure -text [lindex $speeddown_f 1]B/s -state $gaugestate
     
         lassign [speed-gauge-calc $speedup 2000000 100] width rgb
         #puts stderr "speedup $speedup   width $width    rgb: $rgb"
         $db.speedupgauge.fill configure -background $rgb -width $width
     
         set totalup_f [format-mega $totalup]
-        $db.totalup configure -text [lindex $totalup_f 0]
-        $db.totalupunit configure -text [lindex $totalup_f 1]B
+        $db.totalup configure -text [lindex $totalup_f 0] -state $gaugestate
+        $db.totalupunit configure -text [lindex $totalup_f 1]B -state $gaugestate
         set totaldown_f [format-mega $totaldown]
-        $db.totaldown configure -text [lindex $totaldown_f 0]
-        $db.totaldownunit configure -text [lindex $totaldown_f 1]B
+        $db.totaldown configure -text [lindex $totaldown_f 0] -state $gaugestate
+        $db.totaldownunit configure -text [lindex $totaldown_f 1]B -state $gaugestate
     
         lassign [speed-gauge-calc $speeddown 2000000 100] width rgb
         #puts stderr "speeddown $speeddown   width $width    rgb: $rgb"
@@ -1744,8 +1622,8 @@ proc frame-toolbar {p} {
     img place 24/options  $tb.options
     label $tb.bang
     img place 16/bang $tb.bang
-    grid $tb.bang -row 0 -column 0 -sticky w
-    grid $tb.improve -row 0 -column 1 -sticky w
+#    grid $tb.bang -row 0 -column 0 -sticky w
+#    grid $tb.improve -row 0 -column 1 -sticky w
     grid $tb.options -row 0 -column 2 -sticky e
     grid $tb -padx 5 -sticky news
     grid columnconfigure $tb $tb.options -weight 1
@@ -1828,7 +1706,6 @@ proc tabset-profiles {p} {
     select-profile $nb
     set now [model now]
     dash-plan-update $now
-    dash-time-update $now
     return $nb
 }
 
@@ -2780,7 +2657,6 @@ proc plan-monitor {} {
     if {![is-addprovider-tab-selected]} {
         set now [model now]
         dash-plan-update $now
-        dash-time-update $now
     }
     after 5000 plan-monitor
 }
