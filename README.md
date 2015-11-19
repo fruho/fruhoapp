@@ -52,7 +52,7 @@ We run a few supporting VPN servers as a way to bootstrap the application and pr
 
 ### How to import configuration from my VPN provider?
 
-In most cases it's as easy as on this [screenshot:](/screenshots/1)
+In most cases it's as easy as on this [screenshot:](https://fruho.com/screenshots/1)
 
 *   Create an account with VPN provider if you don't have one (many of them are free)
 *   Enter account's username and password in the program and click "Import configuration"
@@ -61,13 +61,13 @@ In most cases it's as easy as on this [screenshot:](/screenshots/1)
 
 Curently we support "one click" import from the following providers:
 
-*   [VpnBook](/redirect?urlid=vpnbook) (free)
-*   [SecurityKISS](/redirect?urlid=securitykiss) (free or premium)
-*   [Mullvad](/redirect?urlid=mullvad) (free trial or premium)
-*   [HideIpVPN](/redirect?urlid=hideipvpn) (free trial or premium)
-*   [VyprVPN](/redirect?urlid=vyprvpn) (free trial or premium)
-*   [AirVPN](/redirect?urlid=airvpn) (premium only)
+*   [VpnBook](https://fruho.com/redirect?urlid=vpnbook) (free)
+*   [SecurityKISS](https://fruho.com/redirect?urlid=securitykiss) (free or premium)
+*   [Mullvad](https://fruho.com/redirect?urlid=mullvad) (free trial or premium)
+*   [HideIpVPN](https://fruho.com/redirect?urlid=hideipvpn) (free trial or premium)
+*   [VyprVPN](https://fruho.com/redirect?urlid=vyprvpn) (free trial or premium)
+*   [AirVPN](https://fruho.com/redirect?urlid=airvpn) (premium only)
 
-Basically any VPN provier is supported who provides OpenVPN config files. See how to import config files [manually.](/howto/1)
+Basically any VPN provier is supported who provides OpenVPN config files. See how to import config files [manually.](https://fruho.com/howto/1)
 
-[Let us know](/contact) if you would like to include your favorite service into "one click" import.
+[Let us know](https://fruho.com/contact) if you would like to include your favorite service into "one click" import.
