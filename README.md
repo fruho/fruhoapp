@@ -52,7 +52,7 @@ We run a few supporting VPN servers as a way to bootstrap the application and pr
 
 ### How to import configuration from my VPN provider?
 
-In most cases it's as easy as on this [screenshot:](https://fruho.com/screenshots/1)
+In most cases it's as easy as on this [screenshot:](https://fruho.com/screenshots/6)
 
 *   Create an account with VPN provider if you don't have one (many of them are free)
 *   Enter account's username and password in the program and click "Import configuration"
