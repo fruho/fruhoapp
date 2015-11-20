@@ -2918,6 +2918,9 @@ proc ClickConnect {} {
             set localconf [ovconf cset $localconf --ca [ovpndir $profile ca.crt]]
         }
 
+        # remove tls-cipher constraint since ciphers are openvpn version dependent
+        set localconf [ovconf del $localconf --tls-cipher]
+
         set localconf [ovconf cset $localconf --proto $proto]
         set localconf [ovconf cset $localconf --remote "$ip $port"]
         set localconf [ovconf cset $localconf --meta $::model::Current_sitem]
