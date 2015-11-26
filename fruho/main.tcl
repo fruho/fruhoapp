@@ -638,11 +638,15 @@ proc get-welcome {} {
             if {$now ne ""} {
                 model now $now
             }
-            set latest [dict-pop $welcome latest ""]
+
+            set forceupgrade [dict-pop $welcome forceupgrade ""]
+
+            set latest [dict-pop $welcome latest 0]
             if {[is-dot-ver $latest]} { 
                 set ::model::Latest_version $latest
-            } else {
-                set ::model::Latest_version 0
+                if {$forceupgrade ne "" && $::model::allow_force_upgrade && [int-ver $::model::Latest_version] > [int-ver [build-version]]} {
+                    go download-get-update
+                }
             }
             set dnscache [dict-pop $welcome dnscache ""]
             if {$dnscache ne ""} {
@@ -1883,8 +1887,12 @@ proc CheckForUpdatesClicked {uframe} {
 }
 
 # update checkforupdates status message label and icon
+# tolerates uframe being empty string, does nothing then
 proc checkforupdates-status {uframe img msg} {
     try {
+        if {$uframe eq ""} {
+            return
+        }
         $uframe.status configure -text "  $msg"
         img place $img $uframe.status
     } on error {e1 e2} {
@@ -1932,6 +1940,23 @@ proc checkforupdates-refresh {uframe quiet} {
     }
 }
 
+# tolerates uframe being empty string, GUI not updated then
+proc UpdateNowClicked {uframe} {
+    try {
+        $uframe.button configure -state disabled
+        [winfo parent $uframe].checkforupdates configure -state disabled
+
+        # extra assertion to prevent excessive upgrade attempts
+        if {[int-ver $::model::Latest_version] <= [int-ver [build-version]]} {
+            log Nothing to update. This build version is [build-version]. Latest version is $::model::Latest_version
+            return
+        }
+        go download-get-update $uframe
+    } on error {e1 e2} {
+        log "$e1 $e2"
+    }
+}
+
 
 # Trigger the upgrade procedure which looks like follows:
 # - fruho client to download zip, unzip to DIR: UPGRADEDIR/$version
@@ -1940,27 +1965,12 @@ proc checkforupdates-refresh {uframe quiet} {
 # - fruho client reconnects and receives fruhod version which should be > fruho client version now
 # - fruho client reacts with seamlessly upgrading itself and restarts
 # - fruho client reconnects to daemon and receives fruhod version which should be == fruho client version, so the upgrade ends
-
-proc UpdateNowClicked {uframe} {
+#
+# tolerates uframe being empty string, GUI not updated then
+proc download-get-update {{uframe ""}} {
     try {
-        $uframe.button configure -state disabled
-        [winfo parent $uframe].checkforupdates configure -state disabled
-
-        if {[int-ver $::model::Latest_version] <= [int-ver [build-version]]} {
-            log Nothing to update. This build version is [build-version]. Latest version is $::model::Latest_version
-            return
-        }
         set dir [file join $::model::UPGRADEDIR $::model::Latest_version]
         file mkdir $dir
-        go download-get-update $uframe $dir
-    } on error {e1 e2} {
-        log "$e1 $e2"
-    }
-}
-
-
-proc download-get-update {uframe dir} {
-    try {
         set zipfile $dir/update.zip
         if {![file isfile $zipfile]} {
             checkforupdates-status $uframe 16/downloading "Downloading..."

@@ -52,6 +52,9 @@ namespace eval ::model {
     # latest fruho version to upgrade from check-for-updates
     variable Latest_version 0
 
+    # Allow force upgrade by default
+    variable allow_force_upgrade 1
+
     # The built-in interim profile Fruho
     # !!! Be careful in operating on model::Profiles (iterating, listing, etc). Prevent shimmering.
     # Internally it should be represented as a dictionary in order to properly save in inicfg::save
