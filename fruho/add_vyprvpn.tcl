@@ -13,8 +13,8 @@ namespace eval ::vyprvpn {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username hypatia2@yandex.com
-    variable password nobel7
+    variable username ""
+    variable password ""
 
 }
 

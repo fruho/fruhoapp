@@ -1622,8 +1622,8 @@ proc frame-toolbar {p} {
     img place 24/options  $tb.options
     label $tb.bang
     img place 16/bang $tb.bang
-#    grid $tb.bang -row 0 -column 0 -sticky w
-#    grid $tb.improve -row 0 -column 1 -sticky w
+    grid $tb.bang -row 0 -column 0 -sticky w
+    grid $tb.improve -row 0 -column 1 -sticky w
     grid $tb.options -row 0 -column 2 -sticky e
     grid $tb -padx 5 -sticky news
     grid columnconfigure $tb $tb.options -weight 1
