@@ -243,7 +243,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.9
+set ::FRUHO_VERSION 0.0.10
 prepare-lib sklib 0.0.0
 #build-total
 #package require i18n
@@ -253,13 +253,13 @@ build-fruho linux [this-arch]
 build-fruhod linux [this-arch]
 build-deb-rpm [this-arch]
 
-#build-fruho linux ix86
-#build-fruhod linux ix86
-#build-deb-rpm ix86
+build-fruho linux ix86
+build-fruhod linux ix86
+build-deb-rpm ix86
 
 #push-update linux [this-arch] vbox_123
 
-#release hypatia2
+release hypatia2
 
 
 # sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb

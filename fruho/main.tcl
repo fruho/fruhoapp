@@ -332,7 +332,8 @@ proc main-gui {} {
         label .mainstatusline.msg
         label .mainstatusline.spin
         img place 16/empty .mainstatusline.spin
-        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize $::model::OPENVPNLOGFILE] &]
+        # TODO consider logging editor stderr/stdout to a file for debugging
+        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize $::model::OPENVPNLOGFILE] >>& /dev/null &]
         grid .mainstatusline.msg .mainstatusline.spin .mainstatusline.link -padx 5
         grid .mainstatusline -sticky news -padx 10
 
