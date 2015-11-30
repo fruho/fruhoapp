@@ -98,8 +98,8 @@ namespace eval ::model {
     variable layout_fgelapsed grey
     variable layout_x 300
     variable layout_y 300
-    variable layout_w 0
-    variable layout_h 0
+    variable layout_w 800
+    variable layout_h 550
     variable layout_barw 350
     variable layout_barh 8
 

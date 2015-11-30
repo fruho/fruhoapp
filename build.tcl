@@ -243,7 +243,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.10
+set ::FRUHO_VERSION 0.0.11
 prepare-lib sklib 0.0.0
 #build-total
 #package require i18n

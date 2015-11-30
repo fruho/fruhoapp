@@ -7,8 +7,8 @@ namespace eval ::cyberghost {
     variable dispname CyberGhost
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username 4478671_Mjz3msabMw
-    variable password PGexN8u3kV
+    variable username ""
+    variable password ""
 }
 
 
