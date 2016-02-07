@@ -97,7 +97,7 @@ proc build-deb-rpm {arch} {
         file copy build/fruho/linux-$arch/fruho.bin $distdir/usr/local/bin/fruho.bin
         file copy fruho/exclude/fruho $distdir/usr/local/bin/fruho
         cd $distdir
-        set fpmopts "-a [fpm-arch $arch] -s dir -n fruho -v $::FRUHO_VERSION --before-install ../../fruhod/exclude/fruhod.preinst --after-install ../../fruhod/exclude/fruhod.postinst --before-remove ../../fruhod/exclude/fruhod.prerm --after-remove ../../fruhod/exclude/fruhod.postrm usr etc"
+        set fpmopts "-a [fpm-arch $arch] -s dir -n fruho -v $::FRUHO_VERSION --maintainer \"Fruho Team \<dev@fruho.com\>\" --description \"An open-source, zero-configuration, no-registration, VPN client for Linux that just works.\nIt supports automatic setup and allows easy switching between VPN providers.\" --config-files etc/fruhod/keys/signer_public.pem --config-files etc/init.d/fruhod  --before-install ../../fruhod/exclude/fruhod.preinst --after-install ../../fruhod/exclude/fruhod.postinst --before-remove ../../fruhod/exclude/fruhod.prerm --after-remove ../../fruhod/exclude/fruhod.postrm usr etc"
         ex fpm -t deb {*}$fpmopts
         ex fpm -t rpm --rpm-autoreqprov {*}$fpmopts
         cd ../..
@@ -243,9 +243,9 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.11
+set ::FRUHO_VERSION 0.0.13
 prepare-lib sklib 0.0.0
-#build-total
+build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
@@ -253,9 +253,9 @@ build-fruho linux [this-arch]
 build-fruhod linux [this-arch]
 build-deb-rpm [this-arch]
 
-build-fruho linux ix86
-build-fruhod linux ix86
-build-deb-rpm ix86
+#build-fruho linux ix86
+#build-fruhod linux ix86
+#build-deb-rpm ix86
 
 #push-update linux [this-arch] vbox_123
 
