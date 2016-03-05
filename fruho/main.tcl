@@ -183,7 +183,7 @@ proc main {} {
         }
     
         
-        set piderr [create-pidfile ~/.fruho/fruho.pid]
+        set piderr [create-pidfile [model PIDFILE]]
         if {$piderr ne ""} {
             exit-nosave $piderr
         } 
@@ -206,7 +206,7 @@ proc main-exit {{arg ""}} {
         model save
     }
     # ignore if problems occurred in deleting pidfile
-    delete-pidfile ~/.fruho/fruho.pid
+    delete-pidfile [model PIDFILE]
     set ::until_exit 1
     catch {close [$::model::Ffconn_sock}
     catch {close $::model::Openvpnlog}

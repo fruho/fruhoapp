@@ -153,6 +153,9 @@ proc ::model::INIFILE {} {
 proc ::model::LOGFILE {} {
     return [file join [model CONFIGDIR] fruho.log]
 }
+proc ::model::PIDFILE {} {
+    return [file join [model CONFIGDIR] fruho.pid]
+}
 proc ::model::OPENVPNLOGFILE {} {
     return [file join [model CONFIGDIR] openvpn.log]
 }
