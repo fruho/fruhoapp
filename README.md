@@ -71,3 +71,5 @@ Curently we support "one click" import from the following providers:
 Basically any VPN provier is supported who provides OpenVPN config files. See how to import config files [manually.](https://fruho.com/howto/1)
 
 [Let us know](https://fruho.com/contact) if you would like to include your favorite service into "one click" import.
+
+---
