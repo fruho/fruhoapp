@@ -65,7 +65,7 @@ proc ::unix::is-x-running {} {
 
 # locate desktop dir for current user
 proc ::unix::get-desktop-dir {} {
-    set userdirs [file normalize ~/.config/user-dirs.dirs]
+    set userdirs [file normalize [file join [unix homedir] .config user-dirs.dirs]]
     set desktop Desktop
     if {[file exists $userdirs]} {
         set content [slurp $userdirs]
@@ -75,7 +75,7 @@ proc ::unix::get-desktop-dir {} {
     if {[llength $desktop] > 3 || [string length $desktop] > 20} {
         set desktop Desktop
     }
-    set desktopdir [file normalize "~/$desktop"]
+    set desktopdir [file normalize [file join [unix homedir] $desktop]]
     return $desktopdir
 }
 
