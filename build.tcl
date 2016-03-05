@@ -245,7 +245,7 @@ proc push-update {os arch tohost} {
 
 set ::FRUHO_VERSION 0.0.13
 prepare-lib sklib 0.0.0
-build-total
+#build-total
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
@@ -259,7 +259,7 @@ build-deb-rpm [this-arch]
 
 #push-update linux [this-arch] vbox_123
 
-release hypatia2
+#release hypatia2
 
 
 # sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb
