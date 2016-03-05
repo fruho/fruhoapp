@@ -63,13 +63,13 @@ interp bgerror "" background-error
 
 # We need to redirect to log file here and not in external shell script
 # in case it is run with sudo. Then logging would go to /root/.fruho
-# Redirect stdout to a file $::model::LOGFILE
+# Redirect stdout to a file model LOGFILE
 namespace eval tolog {
     variable fh
     proc initialize {args} {
         variable fh
         # if for some reason cannot log to file, log to stderr
-        if {[catch {mk-head-dir $::model::LOGFILE} out err] == 1 || [catch {set fh [open $::model::LOGFILE w]} out err] == 1} {
+        if {[catch {mk-head-dir [model LOGFILE]} out err] == 1 || [catch {set fh [open [model LOGFILE] w]} out err] == 1} {
             set fh stderr
             puts stderr $err
         }
@@ -143,7 +143,7 @@ proc main {} {
 
         # Copy cadir because it  must be accessible from outside of the starkit
         # Overwrites certs on every run
-        copy-merge [file join [file dir [info script]] certs] $::model::CADIR
+        copy-merge [file join [file dir [info script]] certs] [model CADIR]
     
         if {$params(cli) || ![unix is-x-running] || $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher)} {
             set ::model::Ui cli
@@ -190,7 +190,7 @@ proc main {} {
     
         set ::model::Running_binary_fingerprint [sha1sum [this-binary]]
     
-        set ::model::OPENVPNLOG [open $::model::OPENVPNLOGFILE w]
+        set ::model::Openvpnlog [open [model OPENVPNLOGFILE] w]
         in-ui main
         daemon-monitor
         go ffread-loop
@@ -209,7 +209,7 @@ proc main-exit {{arg ""}} {
     delete-pidfile ~/.fruho/fruho.pid
     set ::until_exit 1
     catch {close [$::model::Ffconn_sock}
-    catch {close $::model::OPENVPNLOG}
+    catch {close $::model::Openvpnlog}
     catch {destroy .}
     exit
 }
@@ -227,7 +227,7 @@ proc error-gui {msg} {
         # hide toplevel window. Use wm deiconify to restore later
         catch {wm withdraw .}
         log $msg
-        tk_messageBox -title "fruho error" -type ok -icon error -message ERROR -detail "$msg\n\nPlease check $::model::LOGFILE for details"
+        tk_messageBox -title "fruho error" -type ok -icon error -message ERROR -detail "$msg\n\nPlease check [model LOGFILE] for details"
     } else {
         error-cli $msg
     }
@@ -333,7 +333,7 @@ proc main-gui {} {
         label .mainstatusline.spin
         img place 16/empty .mainstatusline.spin
         # TODO consider logging editor stderr/stdout to a file for debugging
-        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize $::model::OPENVPNLOGFILE] >>& /dev/null &]
+        hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize [model OPENVPNLOGFILE]] >>& /dev/null &]
         grid .mainstatusline.msg .mainstatusline.spin .mainstatusline.link -padx 5
         grid .mainstatusline -sticky news -padx 10
 
@@ -855,7 +855,7 @@ proc rebuild-slist-with-geoloc {slist loc} {
 
 
 proc ovpndir {profileid args} {
-    return [file join $::model::PROFILEDIR [name2id $profileid] ovpnconf default {*}$args]
+    return [file join [model PROFILEDIR] [name2id $profileid] ovpnconf default {*}$args]
 }
 
 
@@ -884,7 +884,7 @@ proc is-config-received {profileid} {
 
 proc curl-dispatch {chout cherr hostport args} {
     if {[string match bootstrap:* $hostport]} {
-        curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cadir $::model::CADIR {*}$args
+        curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cadir [model CADIR] {*}$args
     } else {
         curl-retry $chout $cherr -hostports [lrepeat 3 $hostport] {*}$args
     }
@@ -1970,7 +1970,7 @@ proc UpdateNowClicked {uframe} {
 # tolerates uframe being empty string, GUI not updated then
 proc download-get-update {{uframe ""}} {
     try {
-        set dir [file join $::model::UPGRADEDIR $::model::Latest_version]
+        set dir [file join [model UPGRADEDIR] $::model::Latest_version]
         file mkdir $dir
         set zipfile $dir/update.zip
         if {![file isfile $zipfile]} {
@@ -2761,15 +2761,15 @@ proc ffread-loop {} {
                         }
                         {^OpenVPN ERROR} {
                             $::model::Chan_openvpn_fail <- [lindex $tokens 1]
-                            puts $::model::OPENVPNLOG [lindex $tokens 1]
-                            flush $::model::OPENVPNLOG
+                            puts $::model::Openvpnlog [lindex $tokens 1]
+                            flush $::model::Openvpnlog
                         }
                     }
                 }
                 {^ovpn: (.*)$} {
                     catch {
-                        puts $::model::OPENVPNLOG [lindex $tokens 1]
-                        flush $::model::OPENVPNLOG
+                        puts $::model::Openvpnlog [lindex $tokens 1]
+                        flush $::model::Openvpnlog
                     }
                     switch -regexp -matchvar details [lindex $tokens 1] {
                         {^Initialization Sequence Completed} {
@@ -3015,7 +3015,7 @@ proc ClickConnect {} {
             ffwrite "config $localconf"
     
             # append newlines to openvpn log for better readability
-            puts $::model::OPENVPNLOG "\n\n"
+            puts $::model::Openvpnlog "\n\n"
     
             $::model::Chan_button_connect <- 1
         }

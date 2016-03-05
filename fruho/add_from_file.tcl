@@ -68,7 +68,7 @@ proc ::from_file::add-to-treeview-plist {plist} {
 proc ::from_file::SelectFileClicked {pconf} {
     # "Select configuration files"
     # "Press Control to select multiple files"
-    set files [tk_getOpenFile -multiple 1 -initialdir /home/sk/configbundles/sk1]
+    set files [tk_getOpenFile -multiple 1]  ;# possible -initialdir option
     if {$files ne ""} {
         set ::model::Gui_selected_files $files
         $pconf.select.msg configure -text "[llength $::model::Gui_selected_files] file(s) selected"

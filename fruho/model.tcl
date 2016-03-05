@@ -14,21 +14,6 @@ namespace eval ::model {
     namespace ensemble create
 
     ######################################## 
-    # Constants
-    ########################################
-    
-    variable HOME [file normalize ~]
-    variable CONFIGDIR [file join $HOME .fruho]
-    variable INIFILE [file join $CONFIGDIR fruho.ini]
-    variable LOGFILE [file join $CONFIGDIR fruho.log]
-    variable OPENVPNLOGFILE [file join $CONFIGDIR openvpn.log]
-    variable OPENVPNLOG ""
-    variable PROFILEDIR [file join $CONFIGDIR profile]
-    variable UPGRADEDIR [file join $CONFIGDIR upgrade]
-    variable CADIR [file join $CONFIGDIR certs]
-
-
-    ######################################## 
     # General globals
     ######################################## 
 
@@ -139,6 +124,8 @@ namespace eval ::model {
 
 
 
+    # file descriptor for OPENVPNLOGFILE
+    variable Openvpnlog {}
 
     # client id
     variable Cn ""
@@ -155,6 +142,29 @@ namespace eval ::model {
     variable Supported_providers {}
 }
 
+
+# Moved from constants to procs since these might change when relinquish root
+proc ::model::CONFIGDIR {} {
+    return [file join [unix homedir] .fruho]
+}
+proc ::model::INIFILE {} {
+    return [file join [model CONFIGDIR] fruho.ini]
+}
+proc ::model::LOGFILE {} {
+    return [file join [model CONFIGDIR] fruho.log]
+}
+proc ::model::OPENVPNLOGFILE {} {
+    return [file join [model CONFIGDIR] openvpn.log]
+}
+proc ::model::PROFILEDIR {} {
+    return [file join [model CONFIGDIR] profile]
+}
+proc ::model::UPGRADEDIR {} {
+    return [file join [model CONFIGDIR] upgrade]
+}
+proc ::model::CADIR {} {
+    return [file join [model CONFIGDIR] certs]
+}
 
 # Display all model variables to stderr
 proc ::model::print {} {
@@ -246,20 +256,20 @@ proc ::model::load-bootstrap {} {
 # and populate to model ns
 proc ::model::load {} {
     if {[catch {
-        ini2model $::model::INIFILE
+        ini2model [model INIFILE]
         ::model::load-bootstrap
 
         # load profiles from individual directories and update model
-        set profiles [lmap d [glob -directory $::model::PROFILEDIR -nocomplain -type d *] {file tail $d}]
+        set profiles [lmap d [glob -directory [model PROFILEDIR] -nocomplain -type d *] {file tail $d}]
         # sanitize directory names
         foreach p $profiles {
             if {![regexp {^[\w\d_]+$} $p]} {
-                fatal "Profile directory name should be alphanumeric string in $::model::PROFILEDIR"
+                fatal "Profile directory name should be alphanumeric string in [model PROFILEDIR]"
             }
         }
 
         foreach p $profiles {
-            set inifile [file join $::model::PROFILEDIR $p config.ini]
+            set inifile [file join [model PROFILEDIR] $p config.ini]
             if {[file exists $inifile]} {
                 dict set ::model::Profiles $p [inicfg load $inifile]
             }
@@ -277,10 +287,10 @@ proc ::model::load {} {
 # may throw errors
 proc ::model::save {} {
     # save main ini
-    ::model::model2ini $::model::INIFILE
+    ::model::model2ini [model INIFILE]
     # save profile inis
     dict for {p d} $::model::Profiles {
-        set inifile [file join $::model::PROFILEDIR $p config.ini]
+        set inifile [file join [model PROFILEDIR] $p config.ini]
         ::model::dict2ini $d $inifile
     }
 }

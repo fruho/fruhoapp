@@ -98,3 +98,12 @@ proc ::unix::remove-launcher {appname} {
         file delete $launcher
     }
 }
+
+# Linux user home directory
+# This is improved/resilient to sudo/su changes
+# The problem was that when running the program with sudo 
+# and then relinquish root the username was changed but on Debian $HOME was pointing to /root
+proc ::unix::homedir {} {
+    return [file normalize ~[id user]]
+}
+
