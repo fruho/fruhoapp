@@ -70,8 +70,7 @@ proc install-fpm {} {
     if {[catch {exec fpm --version}] == 1} {
         puts "Installing fpm"
         ex sudo apt-get update --fix-missing
-        catch {ex sudo apt-get remove ruby1.8}
-        ex sudo apt-get -fy install git ruby1.9.1-full ruby-dev gcc rpm
+        ex sudo apt-get -fy install git ruby-full ruby-dev gcc rpm make
         catch {ex sudo apt-get -fy install rubygems}
         ex sudo apt-get -fy install rubygems-integration
         ex sudo gem install fpm
