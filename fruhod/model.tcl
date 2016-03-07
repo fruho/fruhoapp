@@ -10,6 +10,10 @@ namespace eval ::model {
 
     # fruhod <--> fruho client socket, also indicates if fruho client connected
     variable Ffconn_sock ""
+
+    # cyclic-linuxdeps-check counter
+    variable Linuxdeps_count 0
+
     # OpenVPN config as double-dashed one-line string
     variable ovpn_config ""
 
@@ -63,6 +67,9 @@ namespace eval ::model {
 
     # final openvpn process PID set by algorithm
     variable ovpn_pid 0
+
+    # flag indicating that openvpn is being installed
+    variable ovpn_installing 0
 
 }
 

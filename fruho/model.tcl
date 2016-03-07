@@ -196,7 +196,8 @@ proc ::model::connstatus {args} {
     if {[llength $args] == 1} {
         set newstatus [lindex $args 0]
         # when changing from unknown to not-unknown status clear the mainstatusline last message
-        if {$::model::Connstatus eq "unknown" && $newstatus ne "unknown"} {
+        # the same for installing
+        if { ($::model::Connstatus eq "unknown" && $newstatus ne "unknown") || ($::model::Connstatus eq "installing" && $newstatus ne "installing")} {
             set ::model::Mainstatusline_last ""
             set ::model::Mainstatusline_link ""
         }

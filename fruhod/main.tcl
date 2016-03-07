@@ -72,6 +72,7 @@ proc main {} {
         socket -server daemon-new-connection -myaddr 127.0.0.1 7777
         log Listening on 127.0.0.1:7777
         cyclic-daemon-model-report
+        cyclic-linuxdeps-check
     } on error {e1 e2} {
         log ERROR in main: $e1 $e2
     }
@@ -100,6 +101,27 @@ proc cyclic-daemon-model-report {} {
     after 400 cyclic-daemon-model-report
 } 
 
+proc cyclic-linuxdeps-check {} {
+    # try 7 times every 5 seconds
+    if {$::model::Linuxdeps_count < 7} {
+        incr ::model::Linuxdeps_count
+        log "cyclic-linuxdeps-check # $::model::Linuxdeps_count"
+        if {![linuxdeps is-openvpn-installed]} {
+            log "No OpenVPN installed"
+            set ::model::ovpn_installing 1
+            if {[catch {linuxdeps openvpn-install} out err]} {
+                log $err
+            }
+            after 5000 cyclic-linuxdeps-check
+        } else {
+            set ::model::ovpn_installing 0
+            log "OpenVPN OK"
+        }
+    } else {
+        set ::model::ovpn_installing 0
+    }
+}
+
 
 
 # On new connection to the daemon, close the previous one
@@ -112,6 +134,7 @@ proc daemon-new-connection {sock peerhost peerport} {
     set ::model::Ffconn_sock $sock
     fconfigure $sock -blocking 0 -buffering line
     fileevent $sock readable ffread
+    # report fruhod version when fruho client connects
     daemon-version-report
     daemon-model-report
 }
@@ -241,20 +264,7 @@ proc ffread {} {
                     ffwrite ctrl "OpenVPN already running with pid [ovpn-pid]"
                     return
                 } else {
-                    model reset-ovpn-state
-                    set config [adjust-config $::model::ovpn_config]
-                    set ovpncmd "openvpn $config"
-                    try {
-                        set stdinout [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
-                        set ::model::Start_pid [pid $stdinout]
-                        set ::model::Start_pid_tstamp [clock milliseconds]
-                        # this call is necessary to update ovpn_pid
-                        ovpn-pid
-                        ffwrite ctrl "OpenVPN with pid [ovpn-pid] started"
-                    } on error {e1 e2} {
-                        ffwrite ctrl "OpenVPN ERROR: $e1"
-                        log $e1 $e2
-                    }
+                    ovpn-start
                     return
                 }
             }
@@ -487,6 +497,27 @@ proc ovpn-pid {} {
     return $::model::ovpn_pid
 }
 
+proc ovpn-start {} {
+    if {$::model::ovpn_installing} {
+        # postpone openvpn start in hope that openvpn will get installed in the meantime
+        after 5000 ovpn-start
+    } else {
+        model reset-ovpn-state
+        set config [adjust-config $::model::ovpn_config]
+        set ovpncmd "openvpn $config"
+        try {
+            set stdinout [cmd invoke $ovpncmd OvpnExit OvpnRead OvpnErrRead]
+            set ::model::Start_pid [pid $stdinout]
+            set ::model::Start_pid_tstamp [clock milliseconds]
+            # this call is necessary to update ovpn_pid
+            ovpn-pid
+            ffwrite ctrl "OpenVPN with pid [ovpn-pid] started"
+        } on error {e1 e2} {
+            ffwrite ctrl "OpenVPN ERROR: $e1"
+            log $e1 $e2
+        }
+    }
+}
 
 
 # TODO
@@ -499,64 +530,6 @@ proc ovpn-is-connected {} {
 # TODO
 proc mgmt-is-connected {} {
 }
-
-
-
-#>>ovpn: Wed Apr 08 09:26:43 2015 TAP-WIN32 device [Local Area Connection 2] opened: \\.\Global\{BDCE36A3-CE0B-4370-900A-03F12CDD67C5}.tap
-#>>ovpn: Wed Apr 08 09:26:43 2015 TAP-Windows Driver Version 9.8
-#>>ovpn: Wed Apr 08 09:26:43 2015 MANAGEMENT: Client disconnected
-#>>ovpn: Wed Apr 08 09:26:43 2015 ERROR:  This version of OpenVPN requires a TAP-Windows driver that is at least version 9.9 -- If you recently upgraded your OpenVPN distribution, a reboot is probably required at this point to get Windows to see the new driver.
-
-#Ethernet adapter Local Area Connection 3:
-#
-#        Media State . . . . . . . . . . . : Media disconnected
-#        Description . . . . . . . . . . . : TAP-Win32 Adapter V9 #2
-#        Physical Address. . . . . . . . . : 00-FF-3E-A0-C7-D3
-#
-#Ethernet adapter Local Area Connection 2:
-#
-#        Connection-specific DNS Suffix  . :
-#        Description . . . . . . . . . . . : TAP-Win32 Adapter V9
-#        Physical Address. . . . . . . . . : 00-FF-BD-CE-36-A3
-#        Dhcp Enabled. . . . . . . . . . . : Yes
-#        Autoconfiguration Enabled . . . . : Yes
-#        IP Address. . . . . . . . . . . . : 10.11.5.22
-#        Subnet Mask . . . . . . . . . . . : 255.255.255.252
-#        Default Gateway . . . . . . . . . : 10.11.5.21
-#        DHCP Server . . . . . . . . . . . : 10.11.5.21
-#        DNS Servers . . . . . . . . . . . : 10.11.0.1
-#        Lease Obtained. . . . . . . . . . : 8 kwietnia 2015 09:35:58
-#        Lease Expires . . . . . . . . . . : 7 kwietnia 2016 09:35:58
-
-
-# On Windows to check installed drivers:
-# driverquery /FO list /v
-# sample output:
-# ...
-#Link Date:         2008-04-13 20:15:55
-#Path:              C:\WINDOWS\system32\drivers\sysaudio.sys
-#Init(bytes):       2˙816,00
-#
-#Module Name:       tap0901
-#Display Name:      TAP-Win32 Adapter V9
-#Description:       TAP-Win32 Adapter V9
-#Driver Type:       Kernel 
-#Start Mode:        Manual
-#State:             Running
-#Status:            OK
-#Accept Stop:       TRUE
-#Accept Pause:      FALSE
-#Paged Pool(bytes): 0,00
-#Code(bytes):       20˙480,00
-#BSS(bytes):        0,00
-#Link Date:         2011-03-24 21:20:11
-#Path:              C:\WINDOWS\system32\DRIVERS\tap0901.sys
-#Init(bytes):       4˙096,00
-#
-#Module Name:       Tcpip
-#Display Name:      TCP/IP Protocol Driver
-#Description:       TCP/IP Protocol Driver
-#...
 
 # After tun/tap driver update to OpenVPN 2.3.6 the only things that have changed in driver data:
 #Code(bytes):       19˙968,00

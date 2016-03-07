@@ -68,11 +68,9 @@ proc ::linuxdeps::is-openvpn-installed {} {
 # No errors raised, best effort
 proc ::linuxdeps::openvpn-install {} {
     variable pkgmgr2cmd
-    if {![is-openvpn-installed]} {
-        set pkgcmd [linuxdeps find-pkg-mgr-cmd]
-        if {[llength $pkgcmd] > 0} {
-            exec {*}$pkgcmd openvpn >&@ stdout
-        }
+    set pkgcmd [linuxdeps find-pkg-mgr-cmd]
+    if {[llength $pkgcmd] > 0} {
+        exec {*}$pkgcmd openvpn >&@ stdout &
     }
 }
 

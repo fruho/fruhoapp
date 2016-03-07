@@ -106,8 +106,8 @@ proc build-deb-rpm {arch} {
 
 
 
-proc build-total {} {
-    foreach arch {x86_64 ix86} {
+proc build-total {archs {x86_64 ix86}} {
+    foreach arch $archs {
         build-fruho linux $arch
         build-fruhod linux $arch
         build-deb-rpm $arch
@@ -243,22 +243,13 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.13
+set ::FRUHO_VERSION 0.0.16
 prepare-lib sklib 0.0.0
-#build-total
+build-total x86_64
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
-build-fruho linux [this-arch]
-build-fruhod linux [this-arch]
-build-deb-rpm [this-arch]
-
-#build-fruho linux ix86
-#build-fruhod linux ix86
-#build-deb-rpm ix86
-
 #push-update linux [this-arch] vbox_123
-
 #release hypatia2
 
 

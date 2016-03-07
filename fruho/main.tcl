@@ -17,7 +17,6 @@ package require cmdline
 package require unix
 # unix requires Tclx which litters global namespace. Need to clean up to avoid conflict with csp
 rename ::select ""
-package require linuxdeps
 #http::register https 443 [list tls::socket]
 package require http
 package require https
@@ -353,7 +352,7 @@ proc main-gui {} {
         # don't rely on systray icon
         package require tktray
         tktray::icon .systray -image [img load 16/logo] -docked 1 -visible 1
-        .systray balloon "Fruho balloon" 5000
+        .systray balloon "Fruho installed" 5000
         bind .systray <ButtonPress-3> [list pq 99999]
 
 
@@ -406,6 +405,10 @@ proc mainstatusline-update {stat} {
         set ::model::Mainstatusline [dict create]
         set ::model::Mainstatusline_link ""
         set ::model::Mainstatusline_last "No connection to fruho daemon. Try to restart fruhod service."
+    } elseif {$connstatus eq "installing"} {
+        set ::model::Mainstatusline [dict create]
+        set ::model::Mainstatusline_link ""
+        set ::model::Mainstatusline_last "Installing OpenVPN"
     } else {
         set ::model::Mainstatusline [dict create]
     }
@@ -1189,6 +1192,7 @@ proc connect-button-stand {} {
         timeout {set state disabled}
         cancelled {set state disabled}
         failed {set state disabled}
+        installing {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1217,6 +1221,7 @@ proc disconnect-button-stand {} {
         timeout {set state disabled}
         cancelled {set state disabled}
         failed {set state disabled}
+        installing {set state disabled}
         default {set state disabled}
     }
     return $state
@@ -1260,6 +1265,7 @@ proc connect-msg-stand {} {
         timeout         {set msg [_ "Disconnected"]}
         cancelled       {set msg [_ "Disconnected"]}
         failed          {set msg [_ "Disconnected"]}
+        installing      {set msg [_ "Installing"]}
         connecting      {
             if {$city ne "" && $ccode ne ""} {
                 set msg [_ "Connecting to {0}, {1}" $city $ccode]
@@ -1284,7 +1290,7 @@ proc externalip-stand {} {
 }
 
 
-# for there is a mix of various GUI components updated all together:
+# there is a mix of various GUI components updated all together:
 # - flag/IP
 # - connstatus
 # - gauge
@@ -2740,6 +2746,7 @@ proc ffread-loop {} {
                             ffwrite start
                         }
                         {^version (\S+) (.*)$} {
+                            # fruhod reports its version when fruho client connects
                             set daemon_version [lindex $details 1]
                             puts stderr [log "DAEMON VERSION: $daemon_version"]
                             puts stderr [log "FRUHO CLIENT VERSION: [build-version]"]
@@ -3095,6 +3102,9 @@ proc connstatus-loop {} {
 proc connstatus-reported {stat} {
     if {$stat eq ""} {
         set connstatus unknown
+    } elseif {[dict get $stat ovpn_installing] == 1} {
+        # when openvpn is being installed (may happen when fruhod starts) 
+        set connstatus installing
     } elseif {[dict get $stat ovpn_pid] == 0} {
         set connstatus disconnected
     # model::mgmt_connstatus may store stale value - it is valid only when ovpn_pid is not zero
