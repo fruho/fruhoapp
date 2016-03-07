@@ -1,8 +1,20 @@
-#!/bin/sh
-#
+#!/bin/sh -e
+
+### BEGIN INIT INFO
+# Provides:          fruhod
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
+# Should-Start:      network-manager
+# Should-Stop:       network-manager
+# X-Start-Before:    $x-display-manager gdm kdm xdm wdm ldm sdm nodm
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Fruho VPN client daemon
+# Description: This script will start Fruho VPN client background service
+### END INIT INFO
+
 # Works only on Linux systems since it uses the /proc filesystem. 
 # TODO Consider using kill -0 instead, not sure if POSIX
-# TODO See openvpn init script for inspiration
 
 EXEC=/usr/local/sbin/fruhod.bin
 PIDFILE=/var/run/fruhod.pid
