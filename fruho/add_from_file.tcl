@@ -114,6 +114,9 @@ proc ::from_file::ImportClicked {tab name} {
             dict set ::model::Profiles $profileid profilename $newprofilename
             dict set ::model::Profiles $profileid provider $name
 
+            # expose as an option to the user to export server list in various formats
+            # after 10000 [list temp-export-call $profileid planid_1]
+
             # Delay in resolving server list domains - allow for completing the slist by appenders like in add_cyberghost
             after 1000 go update-bulk-sitem $profileid
         
@@ -128,6 +131,13 @@ proc ::from_file::ImportClicked {tab name} {
         puts stderr [log $e1 $e2]
     }
 }
+
+
+proc temp-export-call {profileid planid} {
+    ::model::slist-export-golang [::model::slist $profileid $planid]
+}
+
+
 
 # to eliminate obvious wrong file candidates upfront
 proc are-selected-files-correct {files} {

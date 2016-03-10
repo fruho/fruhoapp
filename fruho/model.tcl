@@ -362,6 +362,33 @@ proc ::model::sitem-by-id {profile planid sitem_id} {
     return ""
 }
 
+
+
+
+proc ::model::slist-export-golang {slist} {
+    # TODO expose as an option for the user - exporting server list. Now we export to Golang map
+    set result ""
+    foreach sitem $slist {
+        set line ""
+        append line "Sitem\{\"[dict get $sitem id]\", \"[dict get $sitem ccode]\", \"[dict get $sitem country]\", \"[dict get $sitem city]\", \"[dict get $sitem ip]\", "
+        set ovses [dict get $sitem ovses]
+        append line "\[\]Ovs\{"
+        set ovslist {}
+        foreach ovs $ovses {
+            lappend ovslist "Ovs\{\"[dict get $ovs proto]\", \"[dict get $ovs port]\"\}"
+        }
+        append line [join $ovslist ", "]
+        append line "\}\},\n"
+
+        append result $line
+    }
+    puts stderr [log $result]
+    return $result
+}
+
+
+
+
 # [model now]
 # return offset-ed current time, it may use previously saved time offset 
 # it should be server-originated UTC in seconds, if no offset use local time

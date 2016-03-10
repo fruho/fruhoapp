@@ -32,9 +32,9 @@ proc ::ibvpn::create-import-frame {tab} {
     ttk::label $pconf.profilelabel -text "Profile name" -anchor e
     ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
     ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "$dispname username" -anchor e
+    ttk::label $pconf.usernamelabel -text "Username (Email)" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
-    ttk::label $pconf.usernameinfo -foreground grey -text "e.g. euahqiou"
+    ttk::label $pconf.usernameinfo -foreground grey -text ""
     ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
