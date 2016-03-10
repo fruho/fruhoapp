@@ -125,12 +125,3 @@ proc ::securitykiss::ImportClicked {tab} {
 }
 
 lappend ::model::Supported_providers {010 securitykiss}
-
-if 0 {
-dict set model::Supported_providers securitykiss {
-    order 10
-    name $::securitykiss::name
-    dispname $::securitykiss::dispname
-}
-}
-

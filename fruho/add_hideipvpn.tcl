@@ -134,11 +134,3 @@ proc ::hideipvpn::ImportClicked {tab} {
 }
 
 lappend ::model::Supported_providers {050 hideipvpn}
-if 0 {
-dict set model::Supported_providers hideipvpn {
-    order 50
-    name $::hideipvpn::name
-    dispname $::hideipvpn::dispname
-}
-
-}

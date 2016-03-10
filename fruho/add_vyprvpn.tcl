@@ -128,12 +128,3 @@ proc ::vyprvpn::ImportClicked {tab} {
 
 lappend ::model::Supported_providers {110 vyprvpn}
 
-
-if 0 {
-dict set model::Supported_providers vyprvpn {
-    order 110
-    name $::vyprvpn::name
-    dispname $::vyprvpn::dispname
-}
-}
-

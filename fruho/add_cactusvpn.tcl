@@ -1,14 +1,14 @@
 
-namespace eval ::vpnbook {
+namespace eval ::cactusvpn {
     namespace export *
     namespace ensemble create
 
-    variable name vpnbook
-    variable dispname VpnBook
+    variable name cactusvpn
+    variable dispname CactusVPN
     variable host bootstrap
     variable port 10443
-    variable path_config /vpapi/vpnbook/config
-    variable path_plans /vpapi/vpnbook/plans
+    variable path_config /vpapi/cactusvpn/config
+    variable path_plans /vpapi/cactusvpn/plans
 
 
     # input entries - resettable/modifiable variables
@@ -20,7 +20,7 @@ namespace eval ::vpnbook {
 
 
 
-proc ::vpnbook::create-import-frame {tab} {
+proc ::cactusvpn::create-import-frame {tab} {
     variable name
     variable dispname
     variable newprofilename
@@ -34,7 +34,7 @@ proc ::vpnbook::create-import-frame {tab} {
     ttk::label $pconf.profileinfo -foreground grey
     ttk::label $pconf.usernamelabel -text "$dispname username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
-    ttk::label $pconf.usernameinfo -foreground grey -text "e.g. vpnbook"
+    ttk::label $pconf.usernameinfo -foreground grey -text "e.g. euahqiou"
     ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
     ttk::label $pconf.passwordinfo -foreground grey
@@ -42,12 +42,12 @@ proc ::vpnbook::create-import-frame {tab} {
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
     # must use non-ttk label for proper animated gif display
     label $pconf.importline.img
+    hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?urlid=cactusvpn&cn=$::model::Cn><cactusvpn.com>"
     img place 24/empty $pconf.importline.img
     ttk::label $pconf.importline.msg
     grid $pconf.importline.button -row 0 -column 0 -padx 10
     grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
     grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    hypertext $pconf.link "Get free account from <https://fruho.com/redirect?urlid=vpnbook&cn=$::model::Cn><vpnbook.com>"
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
@@ -65,14 +65,14 @@ proc ::vpnbook::create-import-frame {tab} {
     return $pconf
 }
         
-proc ::vpnbook::add-to-treeview-plist {plist} {
+proc ::cactusvpn::add-to-treeview-plist {plist} {
     variable name
     variable dispname
     $plist insert {} end -id $name -image [img load 16/logo_$name] -values [list $dispname]
 }
 
 # this is csp coroutine
-proc ::vpnbook::ImportClicked {tab} {
+proc ::cactusvpn::ImportClicked {tab} {
     try {
         variable name
         variable dispname
@@ -124,4 +124,5 @@ proc ::vpnbook::ImportClicked {tab} {
     }
 }
 
-lappend ::model::Supported_providers {020 vpnbook}
+lappend ::model::Supported_providers {090 cactusvpn}
+

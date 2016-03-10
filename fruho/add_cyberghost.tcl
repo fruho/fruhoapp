@@ -117,11 +117,3 @@ proc ::cyberghost::ImportClicked {tab name} {
 
 
 lappend ::model::Supported_providers {200 cyberghost}
-if 0 {
-dict set model::Supported_providers cyberghost {
-    order 200
-    name $::cyberghost::name
-    dispname $::cyberghost::dispname
-}
-}
-

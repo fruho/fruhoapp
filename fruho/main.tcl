@@ -407,6 +407,7 @@ proc mainstatusline-update {stat} {
         set ::model::Mainstatusline_last "No connection to fruho daemon. Try to restart fruhod service."
     } elseif {$connstatus eq "installing"} {
         set ::model::Mainstatusline [dict create]
+        set ::model::Mainstatusline_spin spin
         set ::model::Mainstatusline_link ""
         set ::model::Mainstatusline_last "Installing OpenVPN"
     } else {
@@ -1745,16 +1746,30 @@ proc ProfileTabChanged {nb} {
 
 
 
+# create a composite frame widget tvs (treeview scrolled) and return the name of the actual treeview child
+proc treeview-scrolled {tvs args} {
+    frame $tvs
+    set tree $tvs.tree
+    set scrollbar $tvs.scrollbar
+    ttk::treeview $tree {*}$args -yscrollcommand [list $scrollbar set]
+    scrollbar $scrollbar -command [list $tree yview]
+    grid $tree $scrollbar -sticky news
+    grid rowconfigure $tvs $tree -weight 1
+    grid columnconfigure $tvs $tree -weight 1
+    return $tree
+}
+
 
 proc frame-addvpnprovider {p} {
     set tab [ttk::frame $p.addvpnprovider]
     ttk::label $tab.addheader -text "Import configuration from the existing account with your VPN provider"
     grid $tab.addheader -row 0 -column 0 -columnspan 2 -sticky news -padx 10 -pady {10 0}
 
+    # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
+    set tvs $tab.tvs
+    set plist [treeview-scrolled $tvs -columns ### -selectmode browse -show tree -height 4]
 
-    set plist $tab.treeview
-    ttk::treeview $plist -columns ### -selectmode browse -show tree -height 4
-    bind $plist <<TreeviewSelect>> [list ProviderListSelected $tab]
+    bind $plist <<TreeviewSelect>> [list ProviderListSelected $tab $plist]
     $plist column #0 -width 50 -anchor nw -stretch 0
     $plist column 0 -width 140 -anchor w
 
@@ -1763,11 +1778,10 @@ proc frame-addvpnprovider {p} {
         $provider add-to-treeview-plist $plist
         $provider create-import-frame $tab
     }
-    grid $plist -row 3 -column 0 -sticky news -padx 10 -pady 10
-    grid rowconfigure $tab $plist -weight 1
-    grid columnconfigure $tab $plist -weight 0
+    grid $tvs -row 3 -column 0 -sticky news -padx 10 -pady 10
+    grid rowconfigure $tab $tvs -weight 1
+    grid columnconfigure $tab $tvs -weight 0
     grid columnconfigure $tab 1 -weight 1
-#    grid columnconfigure $tab 1 -weight 5
 
     # select first item in the treeview
     $plist selection set [lindex [$plist children {}] 0]
@@ -1775,8 +1789,8 @@ proc frame-addvpnprovider {p} {
     return $tab
 }
 
-proc ProviderListSelected {tab} {
-    set provider [$tab.treeview selection]
+proc ProviderListSelected {tab plist} {
+    set provider [$plist selection]
     set slaves [grid slaves $tab -row 3 -column 1]
     foreach slave $slaves {
         grid remove $slave
@@ -2071,8 +2085,11 @@ proc OptionsClicked {} {
         #
         frame $nb.connection
         label $nb.connection.info -text "OpenVPN connection protocol and port preference" -anchor w
-        set ppl $nb.connection.ppl
-        ttk::treeview $ppl -columns protoport -selectmode browse -show tree
+
+        # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
+        set pplframe $nb.connection.pplframe
+        set ppl [treeview-scrolled $pplframe -columns protoport -selectmode browse -show tree]
+
         bind $ppl <<TreeviewSelect>> [list options-connection-tab-update $ppl]
         frame $nb.connection.buttons
     
@@ -2104,7 +2121,7 @@ proc OptionsClicked {} {
         frame $nb.connection.panel
     
         grid $nb.connection.info -columnspan 3 -padx 10 -pady {10 0} -sticky news
-        grid $ppl -row 3 -column 0 -sticky news -padx 10 -pady 10
+        grid $pplframe -row 3 -column 0 -sticky news -padx 10 -pady 10
         grid $nb.connection.buttons -row 3 -column 1 -sticky nw -padx 10 -pady 10
         grid $nb.connection.panel -row 3 -column 2 -sticky news -padx 10 -pady 10
         grid $nb.connection.timeout -row 5 -columnspan 3 -sticky news -padx 10 -pady {0 20}
@@ -2118,8 +2135,10 @@ proc OptionsClicked {} {
         #
         frame $nb.profs
         label $nb.profs.info -text "Active profiles" -anchor w
-        set profl $nb.profs.profl
-        ttk::treeview $profl -columns profilename -selectmode browse -show tree
+        
+        # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
+        set proflframe $nb.profs.profl
+        set profl [treeview-scrolled $proflframe -columns profilename -selectmode browse -show tree]
         bind $profl <<TreeviewSelect>> [list options-profile-tab-update $profl]
         frame $nb.profs.buttons
     
@@ -2149,7 +2168,7 @@ proc OptionsClicked {} {
         frame $nb.profs.panel
     
         grid $nb.profs.info -columnspan 3 -padx 10 -pady {10 0} -sticky news
-        grid $profl -row 3 -column 0 -sticky news -padx 10 -pady 10
+        grid $proflframe -row 3 -column 0 -sticky news -padx 10 -pady 10
         grid $nb.profs.buttons -row 3 -column 1 -sticky nw -padx 10 -pady 10
         grid $nb.profs.panel -row 3 -column 2 -sticky news -padx 10 -pady 10
         grid $nb.profs.statusline -row 4 -columnspan 3 -sticky w -padx 10 -pady {0 10}
@@ -2162,7 +2181,7 @@ proc OptionsClicked {} {
         #####################################################
         #
         ttk::notebook::enableTraversal $nb
-        bind $nb <<NotebookTabChanged>> [list OptionsTabChanged $nb]
+        bind $nb <<NotebookTabChanged>> [list OptionsTabChanged $ppl $profl]
         $nb add $nb.about -text About -padding 20
         $nb add $nb.connection -text Connection
         $nb add $nb.profs -text Profile
@@ -2230,9 +2249,9 @@ proc OptionsClicked {} {
     }
 }
 
-proc OptionsTabChanged {nb} {
-    options-connection-tab-update $nb.connection.ppl
-    options-profile-tab-update $nb.profs.profl
+proc OptionsTabChanged {ppl profl} {
+    options-connection-tab-update $ppl
+    options-profile-tab-update $profl
 
 }
 
@@ -2403,10 +2422,10 @@ proc ServerListClicked {} {
         set w .slist_dialog
         catch { destroy $w }
         toplevel $w
-        set wt $w.tree
-    
-        ttk::treeview $wt -columns "country city ip" -selectmode browse -yscrollcommand [list $w.scrollbar set]
-        scrollbar $w.scrollbar -command [list $wt yview]
+
+        # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
+        set wtscrolled $w.tvs
+        set wt [treeview-scrolled $wtscrolled -columns "country city ip" -selectmode browse]
         
         $wt heading #0 -text F
         $wt heading 0 -text Country
@@ -2445,7 +2464,7 @@ proc ServerListClicked {} {
         $wt selection set $ssid
         grid columnconfigure $w 0 -weight 1
         grid rowconfigure $w 0 -weight 1
-        grid $wt $w.scrollbar -sticky news
+        grid $wtscrolled -sticky news
     
         set wb $w.buttons
         ttk::frame $wb
@@ -3098,7 +3117,7 @@ proc connstatus-loop {} {
 
 
 # Extract new OpenVPN connstatus from fruhod stat report
-# Returns possible values: unknown, disconnected, connected, connecting
+# Returns possible values: unknown, installing, disconnected, connected, connecting
 proc connstatus-reported {stat} {
     if {$stat eq ""} {
         set connstatus unknown

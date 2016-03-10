@@ -106,7 +106,7 @@ proc build-deb-rpm {arch} {
 
 
 
-proc build-total {archs {x86_64 ix86}} {
+proc build-total {{archs {x86_64 ix86}}} {
     foreach arch $archs {
         build-fruho linux $arch
         build-fruhod linux $arch
@@ -245,6 +245,7 @@ proc push-update {os arch tohost} {
 
 set ::FRUHO_VERSION 0.0.16
 prepare-lib sklib 0.0.0
+#build-total
 build-total x86_64
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 

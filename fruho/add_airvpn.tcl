@@ -126,10 +126,3 @@ proc ::airvpn::ImportClicked {tab} {
 }
 
 lappend ::model::Supported_providers {150 airvpn}
-if 0 {
-dict set model::Supported_providers airvpn {
-    order 150
-    name $::airvpn::name
-    dispname $::airvpn::dispname
-}
-}

@@ -336,11 +336,3 @@ proc ::from_file::create-slist {endpoints} {
 
 
 lappend ::model::Supported_providers {900 from_file}
-if 0 {
-dict set model::Supported_providers from_file {
-    order 900
-    name $::from_file::name
-    dispname $::from_file::dispname
-}
-}
-

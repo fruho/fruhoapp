@@ -118,12 +118,3 @@ proc ::mullvad::ImportClicked {tab} {
 
 
 lappend ::model::Supported_providers {030 mullvad}
-
-if 0 {
-dict set model::Supported_providers mullvad {
-    order 30
-    name $::mullvad::name
-    dispname $::mullvad::dispname
-}
-}
-
