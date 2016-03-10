@@ -88,10 +88,11 @@ proc ::from_file::ImportClicked {tab name} {
         set profileid [name2id $newprofilename]
         if {[are-selected-files-correct $::model::Gui_selected_files]} {
             set tempdir [copy2temp $::model::Gui_selected_files]
-            puts stderr "tempdir: $tempdir"
+            puts stderr [log "tempdir: $tempdir"]
     
+            # find ovpn file in the bundle, if many take first
             set ovpn [convert-config $tempdir]
-            puts stderr "\n$ovpn\n"
+            #puts stderr "\n$ovpn\n"
             if {$ovpn eq ""} {
                 importline-update $pconf "No openvpn config in selected files" normal empty
                 return
@@ -102,7 +103,7 @@ proc ::from_file::ImportClicked {tab name} {
             ::ovconf::parse $ovpnfile
     
             set slist [extract-servers $tempdir]
-            puts stderr "slist: $slist"
+            puts stderr [log "slist: $slist"]
             if {$slist eq ""} {
                 importline-update $pconf "No server candidates in selected files" normal empty
                 return
@@ -182,6 +183,7 @@ proc ::from_file::find-ovpn-in {dir pattern {find_all 0}} {
 # Convert 3rd party config into Fruho config
 # take directory with the unzipped config files
 # return ovpn config with inline certs
+# If many ovpn configs found take the first one
 proc ::from_file::convert-config {tempdir} {
     set ovpnfile [find-ovpn-in $tempdir *]
     if {$ovpnfile eq ""} {
@@ -193,11 +195,15 @@ proc ::from_file::convert-config {tempdir} {
     if {$ovpnfile eq ""} {
         return ""
     }
+    # take the first found ovpn file
+    set ovpnfile [lindex $ovpnfile 0]
     set ovpn [slurp $ovpnfile]
     append ovpn \n
     if {[ovconf inline-section-coords $ovpn ca] eq ""} {
         set cafile [ovconf raw-get $ovpn ca]
+        
         set cafile [file normalize [file join [file dir $ovpnfile] $cafile]]
+        
         if {[file isfile $cafile]} {
             set ovpn [ovconf raw-del $ovpn ca]
             set ca [slurp $cafile]
@@ -205,6 +211,7 @@ proc ::from_file::convert-config {tempdir} {
             append ovpn $ca
             append ovpn "\n</ca>\n"
         }
+
         set certfile [ovconf raw-get $ovpn cert]
         set certfile [file normalize [file join [file dir $ovpnfile] $certfile]]
         if {[file isfile $certfile]} {
@@ -238,17 +245,23 @@ proc ::from_file::extract-servers {tempdir} {
     set files [concat $files [find-ovpn-in $tempdir */*/* 1]]
     # list of triples {host proto port}
     set endpoints {}
-    puts stderr "extract-servers files: $files"
+    puts stderr [log "extract-servers files: $files"]
     foreach f $files {
+        puts stderr [log "Processing $f"]
         set ovpn [slurp $f]
-        puts stderr "slurp ovpn: $ovpn"
+        puts stderr [log "slurp ovpn: $ovpn"]
         set remotes [ovconf raw-get $ovpn remote]
         set remotes [concat $remotes [ovconf raw-get $ovpn #remote]]
         set remotes [concat $remotes [ovconf raw-get $ovpn "# remote"]]
-        puts stderr "remotes: $remotes"
+        puts stderr [log "remotes: $remotes"]
         set proto [ovconf raw-get $ovpn proto]
         foreach r $remotes {
-            lassign $r host port
+            # if proto not given in a separate line in config try to get proto from the remote line (ibVPN provides such config)
+            if {$proto eq ""} {
+                lassign $r host port proto
+            } else {
+                lassign $r host port
+            }
             if {[is-valid-host $host] && [is-valid-port $port] && [is-valid-proto $proto]} {
                 set triple [list $host $proto $port]
                 lappend endpoints $triple

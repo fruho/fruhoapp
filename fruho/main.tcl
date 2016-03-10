@@ -2955,8 +2955,15 @@ proc ClickConnect {} {
             set localconf [ovconf cset $localconf --ca [ovpndir $profile ca.crt]]
         }
 
+        # Some ovpn config adjustments here although daemon also modifies ovconf
+
         # remove tls-cipher constraint since ciphers are openvpn version dependent
         set localconf [ovconf del $localconf --tls-cipher]
+
+        # remove up and down script hooks
+        set localconf [ovconf del $localconf --up]
+        set localconf [ovconf del $localconf --down]
+
 
         set localconf [ovconf cset $localconf --proto $proto]
         set localconf [ovconf cset $localconf --remote "$ip $port"]
