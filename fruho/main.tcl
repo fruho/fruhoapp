@@ -123,6 +123,7 @@ proc main {} {
                 {remove-launcher    "Remove desktop launcher"}
                 {id                 "Show client id from the certificate"}
                 {version            "Print version"}
+                {build              "Print build date"}
                 {locale    en       "Run particular language version"}
             }
         set usage ": fruho \[options]\noptions:"
@@ -137,15 +138,13 @@ proc main {} {
             log $err
         }
     
-        puts stderr [build-date]
-        puts stderr [build-version]
         model load
 
         # Copy cadir because it  must be accessible from outside of the starkit
         # Overwrites certs on every run
         copy-merge [file join [file dir [info script]] certs] [model CADIR]
     
-        if {$params(cli) || ![unix is-x-running] || $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher)} {
+        if {$params(cli) || ![unix is-x-running] || $params(build) | $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher)} {
             set ::model::Ui cli
         } else {
             set ::model::Ui gui
@@ -153,6 +152,9 @@ proc main {} {
     
         if {$params(version)} {
             exit-nosave [build-version]
+        }
+        if {$params(build)} {
+            exit-nosave [build-date]
         }
     
         if {$params(generate-keys)} {
@@ -170,6 +172,9 @@ proc main {} {
             main-exit nosave
         }
     
+
+        puts stderr [build-date]
+        puts stderr [build-version]
 
         try {
             set cn [extract-cn-from csr [ovpndir fruho client.csr]]
