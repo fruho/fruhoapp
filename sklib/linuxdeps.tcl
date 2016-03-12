@@ -25,7 +25,7 @@ namespace eval ::linuxdeps {
     #Read cat /proc/version
     # Prefer feature detection over distro detection
 
-    namespace export is-openvpn-installed find-pkg-mgr find-pkg-mgr-cmd tkdeps-install openvpn-install ext2installer
+    namespace export is-openssl-installed is-openvpn-installed find-pkg-mgr find-pkg-mgr-cmd tkdeps-install openvpn-install ext2installer
     namespace ensemble create
 }
 
@@ -55,6 +55,15 @@ proc ::linuxdeps::find-pkg-mgr-cmd {} {
     }
     return ""
 }
+
+proc ::linuxdeps::is-openssl-installed {} {
+    if {![catch {exec openssl version} out err]} {
+        # Additionally check if openssl output starts with "OpenSSL"
+        return [expr {[string first OpenSSL $out] == 0}]
+    }
+    return 0
+}
+
 
 proc ::linuxdeps::is-openvpn-installed {} {
     # Unfortunately openvpn always returns exit code 1

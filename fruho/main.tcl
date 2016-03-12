@@ -15,6 +15,7 @@ package require tls
 #package require http
 package require cmdline
 package require unix
+package require linuxdeps
 # unix requires Tclx which litters global namespace. Need to clean up to avoid conflict with csp
 rename ::select ""
 #http::register https 443 [list tls::socket]
@@ -178,7 +179,11 @@ proc main {} {
             }
         } on error {e1 e2} {
             log "$e1 $e2"
-            exit-nosave "Could not retrieve client id. Try to reinstall the program."
+            if {![linuxdeps is-openssl-installed]} {
+                exit-nosave "Could not find OpenSSL"
+            } else {
+                exit-nosave "Could not retrieve client id. Try to reinstall the program."
+            }
         }
     
         
@@ -247,6 +252,9 @@ proc main-generate-keys {} {
     } else {
         if {![generate-rsa $privkey]} {
             puts stderr [log Could not generate RSA keys]
+            if {![linuxdeps is-openssl-installed]} {
+                puts stderr [log Could not find OpenSSL]
+            }
             return
         }
     }
@@ -257,6 +265,9 @@ proc main-generate-keys {} {
         set cn [generate-cn]
         if {![generate-csr $privkey $csr $cn]} {
             puts stderr [log Could not generate Certificate Signing Request]
+            if {![linuxdeps is-openssl-installed]} {
+                puts stderr [log Could not find OpenSSL]
+            }
             return
         }
     }
