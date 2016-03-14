@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/local/bin/fruho.bin "$@" >> /dev/null &
+exec /usr/local/bin/fruho.bin "$@" &

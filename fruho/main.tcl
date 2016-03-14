@@ -48,11 +48,16 @@ proc fatal {msg {err ""}} {
     main-exit
 }
 
-proc exit-nosave {msg} {
+proc exit-nosave-stderr {msg} {
     in-ui error [log $msg]
     main-exit nosave
 }
 
+proc exit-nosave-stdout {msg} {
+    restore-stdout
+    puts $msg
+    main-exit nosave
+}
 
 proc background-error {msg err} {
     fatal $msg [dict get $err -errorinfo]
@@ -106,6 +111,11 @@ proc redirect-stdout {} {
     chan push stdout tolog
 }
 
+proc restore-stdout {} {
+    chan pop stdout
+}
+
+
 # Parse command line options and launch proper task
 # It may set global variables
 proc main {} {
@@ -117,18 +127,18 @@ proc main {} {
     
         # watch out - cmdline is buggy. For example you cannot define help option, it conflicts with the implicit one
         set options {
-                {cli                "Run command line interface (CLI) instead of GUI"}
-                {generate-keys      "Generate private key and certificate signing request"}
-                {add-launcher       "Add desktop launcher for current user"}
-                {remove-launcher    "Remove desktop launcher"}
-                {id                 "Show client id from the certificate"}
-                {version            "Print version"}
-                {build              "Print build date"}
-                {locale    en       "Run particular language version"}
+                {cli                          "Run command line interface (CLI) instead of GUI"}
+                {generate-keys                "Generate private key and certificate signing request"}
+                {add-launcher                 "Add desktop launcher for current user"}
+                {remove-launcher              "Remove desktop launcher"}
+                {id                           "Show client id from the certificate"}
+                {version                      "Print version"}
+                {build                        "Print build date"}
+                {dump-profile-golang.arg ""   "Print profile as Golang map"}
             }
         set usage ": fruho \[options]\noptions:"
         if {[catch {array set params [::cmdline::getoptions ::argv $options $usage]}] == 1} {
-            log [cmdline::usage $options $usage]
+            puts stderr [cmdline::usage $options $usage]
             exit 1
         }
     
@@ -144,17 +154,17 @@ proc main {} {
         # Overwrites certs on every run
         copy-merge [file join [file dir [info script]] certs] [model CADIR]
     
-        if {$params(cli) || ![unix is-x-running] || $params(build) | $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher)} {
+        if {$params(cli) || ![unix is-x-running] || $params(build) || $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher) || $params(dump-profile-golang) ne ""} {
             set ::model::Ui cli
         } else {
             set ::model::Ui gui
         }
     
         if {$params(version)} {
-            exit-nosave [build-version]
+            exit-nosave-stdout [build-version]
         }
         if {$params(build)} {
-            exit-nosave [build-date]
+            exit-nosave-stdout [build-date]
         }
     
         if {$params(generate-keys)} {
@@ -171,30 +181,41 @@ proc main {} {
             unix remove-launcher fruho
             main-exit nosave
         }
-    
-
-        puts stderr [build-date]
-        puts stderr [build-version]
+        if {$params(dump-profile-golang) ne ""} {
+            if {![dict exists $::model::Profiles [name2id $params(dump-profile-golang)] plans]} {
+                exit-nosave-stderr [log "Profile not found."]
+            } else {
+                # it's enough to print only the server list instead of entire plan 
+                set out ""
+                dict for {_ plan} [dict-pop $::model::Profiles [name2id $params(dump-profile-golang)] plans {}] {
+                    append out "Plan [dict-pop $plan name {}]\n"
+                    append out "[model export-slist-golang [dict-pop $plan slist {}]]\n"
+                }
+                exit-nosave-stdout $out
+            }
+        }
 
         try {
             set cn [extract-cn-from csr [ovpndir fruho client.csr]]
             set ::model::Cn $cn
             if {$params(id)} {
-                exit-nosave $cn
+                exit-nosave-stdout $cn
             }
         } on error {e1 e2} {
             log "$e1 $e2"
             if {![linuxdeps is-openssl-installed]} {
-                exit-nosave "Could not find OpenSSL"
+                exit-nosave-stderr "Could not find OpenSSL"
             } else {
-                exit-nosave "Could not retrieve client id. Try to reinstall the program."
+                exit-nosave-stderr "Could not retrieve client id. Try to reinstall the program."
             }
         }
     
+        puts stderr [build-date]
+        puts stderr [build-version]
         
         set piderr [create-pidfile [model PIDFILE]]
         if {$piderr ne ""} {
-            exit-nosave $piderr
+            exit-nosave-stderr $piderr
         } 
     
         set ::model::Running_binary_fingerprint [sha1sum [this-binary]]

@@ -363,10 +363,7 @@ proc ::model::sitem-by-id {profile planid sitem_id} {
 }
 
 
-
-
-proc ::model::slist-export-golang {slist} {
-    # TODO expose as an option for the user - exporting server list. Now we export to Golang map
+proc ::model::export-slist-golang {slist} {
     set result ""
     foreach sitem $slist {
         set line ""
@@ -382,7 +379,6 @@ proc ::model::slist-export-golang {slist} {
 
         append result $line
     }
-    puts stderr [log $result]
     return $result
 }
 
