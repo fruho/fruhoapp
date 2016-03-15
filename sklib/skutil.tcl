@@ -761,7 +761,7 @@ proc hyperlink {name args} {
         dict unset args -command
     }
     # note - this forcibly overrides foreground and font options
-    label $name {*}$args -foreground blue -cursor hand1
+    ttk::label $name {*}$args -foreground blue -cursor hand1
     bind $name <Enter> {%W configure -font UnderlineFont}
     bind $name <Leave> {%W configure -font TkDefaultFont}
     if { [ info exists command ] } {
@@ -814,10 +814,10 @@ proc hypertext {hw composite} {
     }
     #puts stderr "PAIRS: $pairs"
     set count 0
-    frame $hw
+    ttk::frame $hw
     foreach {url lbl} $pairs {
         if {$url eq ""} {
-            label $hw.item$count -text $lbl
+            ttk::label $hw.item$count -text $lbl
         } else {
             hyperlink $hw.item$count -command [list launchBrowser $url] -text $lbl
         }

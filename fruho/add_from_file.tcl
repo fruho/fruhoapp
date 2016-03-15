@@ -12,19 +12,17 @@ namespace eval ::from_file {
 }
 
 
-
 proc ::from_file::create-import-frame {tab} {
     variable name
     variable dispname
-    variable newprofilename
 
-    set newprofilename [unique-profilename "My Profile"]
+    set ::${name}::newprofilename [unique-profilename "My Profile"]
 
     set pconf $tab.$name
     ttk::frame $pconf
-    ttk::label $pconf.profilelabel -text "Profile name" -anchor e
-    ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
-    ttk::label $pconf.profileinfo -foreground grey
+
+    addprovider-gui-profilename $tab $name
+
     ttk::frame $pconf.select
     ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
     ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf]
@@ -33,27 +31,11 @@ proc ::from_file::create-import-frame {tab} {
     grid columnconfigure $pconf.select 0 -weight 1
     ttk::label $pconf.selectinfo -foreground grey
 
-    ttk::frame $pconf.importline
-    ttk::button $pconf.importline.button -state disabled -text "Import configuration" -command [list go ::${name}::ImportClicked $tab $name]
-    # must use non-ttk label for proper animated gif display
-    label $pconf.importline.img
-    img place 24/empty $pconf.importline.img
-    ttk::label $pconf.importline.msg
-    grid $pconf.importline.button -row 0 -column 0 -padx 10
-    grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
-    grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-
     hypertext $pconf.link "<https://fruho.com/howto/1><How to get config files?>"
-
-    grid columnconfigure $pconf 0 -weight 4 -uniform 1
-    grid columnconfigure $pconf 1 -weight 4 -uniform 1
-    grid columnconfigure $pconf 2 -weight 4 -uniform 1
-    grid $pconf.profilelabel -row 1 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.profileinput -row 1 -column 1 -sticky news -padx 5 -pady 5
-    grid $pconf.profileinfo -row 1 -column 2 -sticky news -pady 5
     grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
     grid $pconf.selectinfo -row 4 -column 2 -sticky news
-    grid $pconf.importline -sticky news -columnspan 3
+
+    addprovider-gui-importline $tab $name
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }

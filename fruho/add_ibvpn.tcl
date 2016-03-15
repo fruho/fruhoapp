@@ -18,49 +18,20 @@ namespace eval ::ibvpn {
 
 }
 
-
-
 proc ::ibvpn::create-import-frame {tab} {
     variable name
     variable dispname
-    variable newprofilename
 
-    set newprofilename [unique-profilename $dispname]
+    set ::${name}::newprofilename [unique-profilename $dispname]
 
     set pconf $tab.$name
     ttk::frame $pconf
-    ttk::label $pconf.profilelabel -text "Profile name" -anchor e
-    ttk::entry $pconf.profileinput -textvariable ::${name}::newprofilename
-    ttk::label $pconf.profileinfo -foreground grey
-    ttk::label $pconf.usernamelabel -text "Username (Email)" -anchor e
-    ttk::entry $pconf.usernameinput -textvariable ::${name}::username
-    ttk::label $pconf.usernameinfo -foreground grey -text ""
-    ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
-    ttk::entry $pconf.passwordinput -textvariable ::${name}::password
-    ttk::label $pconf.passwordinfo -foreground grey
-    ttk::frame $pconf.importline
-    ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab]
-    # must use non-ttk label for proper animated gif display
-    label $pconf.importline.img
+
+    addprovider-gui-profilename $tab $name
+    addprovider-gui-username $tab $name $dispname
+    addprovider-gui-password $tab $name $dispname
+    addprovider-gui-importline $tab $name
     hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?urlid=ibvpn&cn=$::model::Cn><ibvpn.com>"
-    img place 24/empty $pconf.importline.img
-    ttk::label $pconf.importline.msg
-    grid $pconf.importline.button -row 0 -column 0 -padx 10
-    grid $pconf.importline.img -row 0 -column 1 -padx 10 -pady 10
-    grid $pconf.importline.msg -row 0 -column 2 -padx 10 -pady 10
-    grid columnconfigure $pconf 0 -weight 4 -uniform 1
-    grid columnconfigure $pconf 1 -weight 4 -uniform 1
-    grid columnconfigure $pconf 2 -weight 4 -uniform 1
-    grid $pconf.profilelabel -row 1 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.profileinput -row 1 -column 1 -sticky news -padx 5 -pady 5
-    grid $pconf.profileinfo -row 1 -column 2 -sticky news -pady 5
-    grid $pconf.usernamelabel -row 5 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.usernameinput -row 5 -column 1 -sticky news -padx 5 -pady 5
-    grid $pconf.usernameinfo -row 5 -column 2 -sticky news -pady 5
-    grid $pconf.passwordlabel -row 7 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
-    grid $pconf.passwordinfo -row 7 -column 2 -sticky news -pady 5
-    grid $pconf.importline -sticky news -columnspan 3
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
@@ -72,7 +43,7 @@ proc ::ibvpn::add-to-treeview-plist {plist} {
 }
 
 # this is csp coroutine
-proc ::ibvpn::ImportClicked {tab} {
+proc ::ibvpn::ImportClicked {tab args} {
     try {
         variable name
         variable dispname
