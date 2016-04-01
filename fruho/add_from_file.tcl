@@ -70,11 +70,10 @@ proc ::from_file::ImportClicked {tab name} {
         set profileid [name2id $newprofilename]
         if {[are-selected-files-correct $::model::Gui_selected_files]} {
             set tempdir [copy2temp $::model::Gui_selected_files]
-            puts stderr [log "tempdir: $tempdir"]
+            log "tempdir: $tempdir"
     
             # find ovpn file in the bundle, if many take first
             set ovpn [convert-config $tempdir]
-            #puts stderr "\n$ovpn\n"
             if {$ovpn eq ""} {
                 importline-update $pconf "No openvpn config in selected files" normal empty
                 return
@@ -85,7 +84,7 @@ proc ::from_file::ImportClicked {tab name} {
             ::ovconf::parse $ovpnfile
     
             set slist [extract-servers $tempdir]
-            puts stderr [log "slist: $slist"]
+            log "slist: $slist"
             if {$slist eq ""} {
                 importline-update $pconf "No server candidates in selected files" normal empty
                 return
@@ -237,15 +236,15 @@ proc ::from_file::extract-servers {tempdir} {
     set files [concat $files [find-ovpn-in $tempdir */*/* 1]]
     # list of triples {host proto port}
     set endpoints {}
-    puts stderr [log "extract-servers files: $files"]
+    log "extract-servers files: $files"
     foreach f $files {
-        puts stderr [log "Processing $f"]
+        log "Processing $f"
         set ovpn [slurp $f]
-        puts stderr [log "slurp ovpn: $ovpn"]
+        log "slurp ovpn: $ovpn"
         set remotes [ovconf raw-get $ovpn remote]
         set remotes [concat $remotes [ovconf raw-get $ovpn #remote]]
         set remotes [concat $remotes [ovconf raw-get $ovpn "# remote"]]
-        puts stderr [log "remotes: $remotes"]
+        log "remotes: $remotes"
         set proto [ovconf raw-get $ovpn proto]
         foreach r $remotes {
             # if proto not given in a separate line in config try to get proto from the remote line (ibVPN provides such config)

@@ -210,8 +210,8 @@ proc main {} {
             }
         }
     
-        puts stderr [build-date]
-        puts stderr [build-version]
+        log [build-date]
+        log [build-version]
         
         set piderr [create-pidfile [model PIDFILE]]
         if {$piderr ne ""} {
@@ -526,8 +526,6 @@ proc current-planid {tstamp profile} {
         return ""
     }
 
-    #puts stderr [log "before lsort: plans: $plans"]
-
     # sort by the second element of 2-elem tuples which is the actual plan
     set sorted_plans [lsort -stride 2 -index 1 -command [list plan-comparator $tstamp] $plans]
     set planid [lindex $sorted_plans 0]
@@ -542,13 +540,11 @@ proc current-planid {tstamp profile} {
 
 proc period-elapsed {plan tstamp} {
     set period_elapsed [expr {$tstamp - [period-start $plan $tstamp]}]
-    #puts stderr "period-elapsed: $period_elapsed"
     return $period_elapsed
 }
 
 proc period-length {plan tstamp} {
     set period_length [expr {[period-end $plan $tstamp] - [period-start $plan $tstamp]}]
-    #puts stderr "period-length: $period_length"
     return $period_length
 }
 
@@ -559,7 +555,6 @@ proc period-end {plan tstamp} {
     #TODO make sure that period is handled well when milliseconds/seconds
     #set period_end [clock add $period_start 1 $period]
     set period_end [clock-add-periods $period_start 1 $period]
-    #puts stderr "period-end:    $period_end"
     return $period_end
 }
 
@@ -588,7 +583,6 @@ proc period-start {plan tstamp} {
         #set end [clock add $plan_start [expr {$i+1}] $period]
         set end [clock-add-periods $plan_start [expr {$i+1}] $period]
         if {$start <= $tstamp && $tstamp < $end} {
-            #puts stderr "period-start:  $start"
             return $start
         }
     }
@@ -663,13 +657,13 @@ proc get-welcome {} {
             select {
                 <- $chout {
                     set data [<- $chout]
-                    puts stderr [log get-welcome received: $data]
+                    log get-welcome received: $data
                     set success 1
                     # Never call return from select condition
                 }
                 <- $cherr {
                     set err [<- $cherr]
-                    puts stderr [log get-welcome failed with error: $err]
+                    log get-welcome failed with error: $err
                     # Never call return from select condition
                 }
             }
@@ -724,7 +718,7 @@ proc get-external-loc {} {
             select {
                 <- $chout {
                     set data [<- $chout]
-                    puts stderr [log get-external-loc received: $data]
+                    log get-external-loc received: $data
                     set ::model::Geo_loc [json::json2dict $data]
                     gui-update
                     set success 1
@@ -732,7 +726,7 @@ proc get-external-loc {} {
                 }
                 <- $cherr {
                     set err [<- $cherr]
-                    puts stderr [log get-external-loc failed with error: $err]
+                    log get-external-loc failed with error: $err
                     # Never call return from select condition
                 }
             }
@@ -769,15 +763,13 @@ proc get-bulk-loc {ips} {
             select {
                 <- $chout {
                     set data [<- $chout]
-                    puts stderr "BULK: $data"
                     set loc [json::json2dict $data]
                     set success 1
-                    puts stderr "GEO loc: $loc"
                     # Never call return from select condition
                 }
                 <- $cherr {
                     set err [<- $cherr]
-                    puts stderr [log get-bulk-loc failed with error: $err]
+                    log get-bulk-loc failed with error: $err
                     # Never call return from select condition
                 }
             }
@@ -811,15 +803,13 @@ proc get-bulk-dns {hosts} {
             select {
                 <- $chout {
                     set data [<- $chout]
-                    puts stderr "BULK: $data"
                     set res [json::json2dict $data]
                     set success 1
-                    puts stderr "bulk-dns: $res"
                     # Never call return from select condition
                 }
                 <- $cherr {
                     set err [<- $cherr]
-                    puts stderr [log get-bulk-dns failed with error: $err]
+                    log get-bulk-dns failed with error: $err
                     # Never call return from select condition
                 }
             }
@@ -963,7 +953,7 @@ proc vpapi-config-direct {profilename host port urlpath username password} {
         select {
             <- $chout {
                 set data [<- $chout]
-                puts stderr [log Saved $f]
+                log Saved $f
                 # parse config now in order to extract separate cert files
                 ::ovconf::parse $f
                 # http request succeded so return http OK response code
@@ -972,7 +962,7 @@ proc vpapi-config-direct {profilename host port urlpath username password} {
             }
             <- $cherr {
                 set err [<- $cherr]
-                puts stderr [log vpapi-config-direct failed with error: $err]
+                log vpapi-config-direct failed with error: $err
                 # will return http response code
                 set httpcode $err
                 # Never call return from select condition
@@ -1007,14 +997,14 @@ proc vpapi-cert-direct {profilename host port urlpath username password} {
         select {
             <- $chout {
                 set data [<- $chout]
-                puts stderr [log Saved $crt]
+                log Saved $crt
                 # http request succeded so return http OK response code
                 set httpcode 200
                 # Never call return from select condition
             }
             <- $cherr {
                 set err [<- $cherr]
-                puts stderr [log vpapi-cert-direct failed with error: $err]
+                log vpapi-cert-direct failed with error: $err
                 # will return http response code
                 set httpcode $err
                 # Never call return from select condition
@@ -1038,18 +1028,17 @@ proc vpapi-plans-direct {profilename host port urlpath username password} {
         select {
             <- $chout {
                 set data [<- $chout]
-                puts stderr [log Received plans JSON: $data]
+                log Received plans JSON: $data
                 set plans [json::json2dict $data]
                 set profileid [name2id $profilename]
                 dict-set-trim ::model::Profiles $profileid plans $plans
                 dict-set-trim ::model::Profiles $profileid profilename $profilename
-                #puts stderr "Profiles: $::model::Profiles"
                 set httpcode 200
                 # Never call return from select condition
             }
             <- $cherr {
                 set err [<- $cherr]
-                puts stderr [log vpapi-plans-direct failed with error: $err]
+                log vpapi-plans-direct failed with error: $err
                 set httpcode $err
                 # Never call return from select condition
             }
@@ -1082,11 +1071,11 @@ proc MovedResized {window x y w h} {
 
 proc faas-config-monitor {} {
     try {
-        puts stderr [log faas-config-monitor running]
+        log faas-config-monitor running
         tickernow t1 10000 #3
         range t $t1 {
             set faas_result [get-faas-config]
-            puts stderr [log "faas_result=$faas_result"]
+            log "faas_result=$faas_result"
             if {$faas_result == 200} {
                 gui-update
                 # this return terminates range but does not return from coroutine
@@ -1094,7 +1083,7 @@ proc faas-config-monitor {} {
             }
         }
         if {$faas_result != 200} {
-            puts stderr [log All faas-config-monitor attempts failed]
+            log All faas-config-monitor attempts failed
         }
     } on error {e1 e2} {
         log "$e1 $e2"
@@ -1116,28 +1105,28 @@ proc get-faas-config {} {
             set result [vpapi-cert-direct Fruho bootstrap $port /vpapi/fruho/cert?[this-pcv] $username $password]
             # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
-                puts stderr [log "ERROR: vpapi-cert-direct Fruho failed with status $result"]
+                log "ERROR: vpapi-cert-direct Fruho failed with status $result"
                 return $result
             }
-            puts stderr [log vpapi-cert-direct Fruho SUCCESS]
+            log vpapi-cert-direct Fruho SUCCESS
         }
         if {![is-config-received fruho]} {
             set result [vpapi-config-direct Fruho bootstrap $port /vpapi/fruho/config?[this-pcv] $username $password]
             # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
-                puts stderr [log "ERROR: vpapi-config-direct Fruho failed with status $result"]
+                log "ERROR: vpapi-config-direct Fruho failed with status $result"
                 return $result
             }
-            puts stderr [log vpapi-config-direct Fruho SUCCESS]
+            log vpapi-config-direct Fruho SUCCESS
         }
         if {![dict exists $::model::Profiles fruho plans]} {
             set result [vpapi-plans-direct Fruho bootstrap $port /vpapi/fruho/plans?[this-pcv] $username $password]
             # TODO handle vpapi nuncio errors via http error codes: 401 (credentials error), 402 (premium account required), 503 (service unavailable)
             if {$result != 200} {
-                puts stderr [log "ERROR: vpapi-plans-direct Fruho failed with status $result"]
+                log "ERROR: vpapi-plans-direct Fruho failed with status $result"
                 return $result
             }
-            puts stderr [log vpapi-plans-direct Fruho SUCCESS]
+            log vpapi-plans-direct Fruho SUCCESS
         }
         return 200
     } on error {e1 e2} {
@@ -1647,7 +1636,6 @@ proc dash-gauge-update {} {
         $db.speeddownunit configure -text [lindex $speeddown_f 1]B/s -state $gaugestate
     
         lassign [speed-gauge-calc $speedup 2000000 100] width rgb
-        #puts stderr "speedup $speedup   width $width    rgb: $rgb"
         $db.speedupgauge.fill configure -background $rgb -width $width
     
         set totalup_f [format-mega $totalup]
@@ -1658,7 +1646,6 @@ proc dash-gauge-update {} {
         $db.totaldownunit configure -text [lindex $totaldown_f 1]B -state $gaugestate
     
         lassign [speed-gauge-calc $speeddown 2000000 100] width rgb
-        #puts stderr "speeddown $speeddown   width $width    rgb: $rgb"
         $db.speeddowngauge.fill configure -background $rgb -width $width
     }
 }
@@ -1950,13 +1937,14 @@ proc InvokeFocusedWithEnter {} {
         return
     }
     set type [winfo class $focused]
+    puts stderr "InvokeFocusedWithEnter $focused"
     switch -glob $type {
         *Button {
             # this matches both Button and TButton
             $focused invoke
         }
         Treeview {
-            puts stderr "selected: [$focused selection]"
+            log "selected: [$focused selection]"
         }
     }
 }
@@ -2086,18 +2074,18 @@ proc download-get-update {{uframe ""}} {
         if {![file isfile $zipfile]} {
             checkforupdates-status $uframe 16/downloading "Downloading..."
             channel {chout cherr} 1
-            puts stderr [log get-update: download /get-update?[this-pcv]&u=$::model::Latest_version]
+            log get-update: download /get-update?[this-pcv]&u=$::model::Latest_version
             curl-dispatch $chout $cherr bootstrap:10443 -urlpath /get-update?[this-pcv]&u=$::model::Latest_version -gettofile $zipfile -indiv_timeout 60000
             log download-get-update started to $zipfile
             select {
                 <- $chout {
                     <- $chout
-                    puts stderr [log download-get-update OK]
+                    log download-get-update OK
                     checkforupdates-status $uframe 16/downloading "Checking..."
                 }
                 <- $cherr {
                     set err [<- $cherr]
-                    puts stderr [log download-get-update ERROR: $err]
+                    log download-get-update ERROR: $err
                     checkforupdates-status $uframe 16/error "Problem with the download"
                 }
             }
@@ -2299,7 +2287,6 @@ proc OptionsClicked {} {
     
         set modal [ShowModal $w]
         if {$modal eq "ok"} {
-            puts stderr "Options ok"
             set ::model::protoport_order {}
             foreach ppitem [$ppl children {}] {
                 lappend ::model::protoport_order [lindex [$ppl item $ppitem -values] 0]
@@ -2424,7 +2411,7 @@ proc ProfileUpdatePlan {tree tabframe} {
             } else {
                 set msg $result
             }
-            puts stderr "updateplan msg: $msg"
+            log "updateplan msg: $msg"
         }
         profile-update-plan-statusline $tabframe $msg 16/empty normal
         after 3000 [list profile-update-plan-statusline $tabframe " " 24/empty normal]
@@ -2548,7 +2535,6 @@ proc ServerListClicked {} {
             if {![img exists $flag]} {
                 set flag 24/flag/EMPTY
             }
-            #puts stderr "TREE INSERT $id           $country $city $ip"
             $wt insert {} end -id $id -image [img load $flag] -values [list $country $city $ip]
         }
         $wt selection set $ssid
@@ -2744,18 +2730,17 @@ proc curl-retry {tryout tryerr args} {
                 if {$status eq "ok" && $ncode == 200} {
                     set host_index [expr {$i % $hlen}]
                     set data [http::data $tok]
-                    puts stderr [log "curl-retry $url success. data: $data"]
+                    log "curl-retry $url success. data: $data"
                     if {$gettofile ne ""} {
                         catch {set fd $state(-channel); close $fd;}
                         # make appearing the file atomic
-                        puts stderr "moving $tmpgettofile to $gettofile"
                         file mkdir [file dir $gettofile]
                         file rename -force $tmpgettofile $gettofile
                     }
                     $tryout <- $data
                     return
                 } else {
-                    puts stderr [log "curl-retry $url failed with status: $status, http code: $ncode, error: [http::error $tok]"]
+                    log "curl-retry $url failed with status: $status, http code: $ncode, error: [http::error $tok]"
                     if {$gettofile ne ""} {
                         file delete $gettofile
                     }
@@ -2769,7 +2754,7 @@ proc curl-retry {tryout tryerr args} {
                 catch {http::cleanup $tok}
             }
         }
-        puts stderr [log "curl-retry pushing ncode_nonempty=$ncode_nonempty to tryerr channel"]
+        log "curl-retry pushing ncode_nonempty=$ncode_nonempty to tryerr channel"
         $tryerr <- $ncode_nonempty
     } on error {e1 e2} {
         log "$e1 $e2"
@@ -2849,7 +2834,7 @@ proc ffread-loop {} {
             set line [<- $::model::Chan_ffread]
             switch -regexp -matchvar tokens $line {
                 {^ctrl: (.*)$} {
-                    puts stderr [log OPENVPN CTRL: [lindex $tokens 1]]
+                    log OPENVPN CTRL: [lindex $tokens 1]
                     switch -regexp -matchvar details [lindex $tokens 1] {
                         {^Config loaded} {
                             ffwrite start
@@ -2857,20 +2842,20 @@ proc ffread-loop {} {
                         {^version (\S+) (.*)$} {
                             # fruhod reports its version when fruho client connects
                             set daemon_version [lindex $details 1]
-                            puts stderr [log "DAEMON VERSION: $daemon_version"]
-                            puts stderr [log "FRUHO CLIENT VERSION: [build-version]"]
+                            log "DAEMON VERSION: $daemon_version"
+                            log "FRUHO CLIENT VERSION: [build-version]"
                             # fruho client to restart itself if daemon already upgraded and not too often
                             if {[int-ver $daemon_version] > [int-ver [build-version]]} {
                                 # restart only if different binaries
                                 if {[sha1sum [this-binary]] ne $::model::Running_binary_fingerprint} {
-                                    puts stderr [log Different binaries detected]
+                                    log Different binaries detected
                                     model save
                                     # Restart itself - the fruho client binary was replaced by the daemon
                                     # Note: If you are using execl in a Tk application and it fails, you may not do anything that accesses the X server or you will receive a BadWindow error from the X server. This includes exe-cuting the Tk version of the exit command. We suggest using the following command to abort Tk applications after an execl fail-ure:
                                     execl [this-binary]
                                     kill [id process]
                                 } else {
-                                    puts stderr [log Aborted. Version mismatch between daemon and client detected but client sees the same binary]
+                                    log Aborted. Version mismatch between daemon and client detected but client sees the same binary
                                 }
 
                             }
@@ -2918,9 +2903,6 @@ proc ffread-loop {} {
                             dash-gauge-update
                         }
                     }
-                    #puts stderr "stat: $stat"
-                    #puts stderr "ovpn_config: $ovpn_config"
-                    #puts stderr "meta: $meta"
 
                     $::model::Chan_stat_report <- $stat
                 }
@@ -3116,7 +3098,6 @@ proc ClickConnect {} {
 
                 set modal [ShowModal $w]
                 if {$modal eq "ok"} {
-                    puts stderr "Userpass entered"
                     set ::model::Gui_auth_user [string trim $::model::Gui_auth_user]
                     set ::model::Gui_auth_pass [string trim $::model::Gui_auth_pass]
                     set localconf [ovconf cset $localconf --custom-auth-user $::model::Gui_auth_user]
@@ -3134,7 +3115,7 @@ proc ClickConnect {} {
         }
 
         if {$should_connect} {
-            puts stderr [log localconf: $localconf]
+            log localconf: $localconf
             ffwrite "config $localconf"
     
             # append newlines to openvpn log for better readability

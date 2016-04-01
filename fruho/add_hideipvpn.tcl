@@ -72,7 +72,6 @@ proc ::hideipvpn::ImportClicked {tab args} {
             importline-update $pconf [http2importline $result] normal empty
             return
         }
-        puts stderr "VPAPI-CONFIG-DIRECT completed"
 
         # in case of hideipvpn using username and password has a different purpose than authentication
         # instead of using for basic authentication (any strings will pass) the credentials are included in the returned config.ovpn
@@ -88,8 +87,6 @@ proc ::hideipvpn::ImportClicked {tab args} {
         dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
         dict set ::model::Profiles $profileid provider $name
 
-        puts stderr "VPAPI-PLANS-DIRECT completed"
-    
         importline-update $pconf "" normal empty
         set ::${name}::username ""
         set ::${name}::password ""

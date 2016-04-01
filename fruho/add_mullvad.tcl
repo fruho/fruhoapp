@@ -73,7 +73,6 @@ proc ::mullvad::ImportClicked {tab args} {
             importline-update $pconf [http2importline $result] normal empty
             return
         }
-        puts stderr "VPAPI-CONFIG-DIRECT completed"
 
         set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
         if {$result != 200} {
@@ -86,8 +85,6 @@ proc ::mullvad::ImportClicked {tab args} {
         dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
         dict set ::model::Profiles $profileid provider $name
 
-        puts stderr "VPAPI-PLANS-DIRECT completed"
-    
         importline-update $pconf "" normal empty
         set ::${name}::username ""
     
