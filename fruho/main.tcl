@@ -1164,6 +1164,7 @@ proc addprovider-gui-username {tab name dispname {info ""}} {
     set pconf $tab.$name
     ttk::label $pconf.usernamelabel -text "$dispname username" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
+    bind $pconf.usernameinput <Return> [list $pconf.importline.button invoke]
     ttk::label $pconf.usernameinfo -foreground grey -text $info
     grid $pconf.usernamelabel -row 5 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.usernameinput -row 5 -column 1 -sticky news -padx 5 -pady 5
@@ -1174,6 +1175,7 @@ proc addprovider-gui-password {tab name dispname} {
     set pconf $tab.$name
     ttk::label $pconf.passwordlabel -text "$dispname password" -anchor e
     ttk::entry $pconf.passwordinput -textvariable ::${name}::password
+    bind $pconf.passwordinput <Return> [list $pconf.importline.button invoke]
     hypertext $pconf.passwordinfo  "<https://fruho.com/privacynote><Privacy ?>"
     grid $pconf.passwordlabel -row 7 -column 0 -sticky news -padx 5 -pady 5
     grid $pconf.passwordinput -row 7 -column 1 -sticky news -padx 5 -pady 5
@@ -1937,7 +1939,6 @@ proc InvokeFocusedWithEnter {} {
         return
     }
     set type [winfo class $focused]
-    puts stderr "InvokeFocusedWithEnter $focused"
     switch -glob $type {
         *Button {
             # this matches both Button and TButton
