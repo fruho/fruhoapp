@@ -243,7 +243,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.16
+set ::FRUHO_VERSION 0.0.17
 prepare-lib sklib 0.0.0
 #build-total
 build-total x86_64

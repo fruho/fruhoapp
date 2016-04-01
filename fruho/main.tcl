@@ -2803,7 +2803,7 @@ proc daemon-monitor {} {
 
 proc daemon-connect {port} {
     #TODO handle error
-    if {[catch {set sock [socket 127.0.0.1 $port]} out err] == 1} {
+    if {[catch {set sock [socket -async 127.0.0.1 $port]} out err] == 1} {
         ffconn-close
         return
     }
