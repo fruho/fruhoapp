@@ -21,25 +21,18 @@ proc ::from_file::create-import-frame {tab} {
     set pconf $tab.$name
     ttk::frame $pconf
 
+    # must be in that order
     addprovider-gui-profilename $tab $name
-
-    ttk::frame $pconf.select
-    ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf]
-    grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
-    grid columnconfigure $pconf.select 0 -weight 1
-    ttk::label $pconf.selectinfo -foreground grey
+    addprovider-gui-importline $tab $name
+    addprovider-gui-selectfiles $tab $name
 
     hypertext $pconf.link "<https://fruho.com/howto/1><How to get config files?>"
-    grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
-    grid $pconf.selectinfo -row 4 -column 2 -sticky news
-
-    addprovider-gui-importline $tab $name
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
+
     return $pconf
 }
         
+
 proc ::from_file::add-to-treeview-plist {plist} {
     variable name
     variable dispname
@@ -47,15 +40,14 @@ proc ::from_file::add-to-treeview-plist {plist} {
 }
 
 
-proc ::from_file::SelectFileClicked {pconf} {
+proc ::from_file::SelectFileClicked {tab name} {
     # "Select configuration files"
     # "Press Control to select multiple files"
     set files [tk_getOpenFile -multiple 1]  ;# possible -initialdir option
     if {$files ne ""} {
         set ::model::Gui_selected_files $files
-        $pconf.select.msg configure -text "[llength $::model::Gui_selected_files] file(s) selected"
-        $pconf.importline.button configure -state normal
     }
+    addprovider-gui-selectfiles-update $tab $name
 }
 
 
@@ -108,6 +100,8 @@ proc ::from_file::ImportClicked {tab name} {
         } else {
             importline-update $pconf "Selected files are incorrect" normal empty
         }
+        set ::model::Gui_selected_files ""
+        addprovider-gui-selectfiles-update $tab $name
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }

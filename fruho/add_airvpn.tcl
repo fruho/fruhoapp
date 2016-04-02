@@ -13,11 +13,8 @@ namespace eval ::airvpn {
 
     # input entries - resettable/modifiable variables
     variable newprofilename ""
-    variable username ""
-    variable password ""
 
 }
-
 
 
 proc ::airvpn::create-import-frame {tab} {
@@ -29,15 +26,15 @@ proc ::airvpn::create-import-frame {tab} {
     set pconf $tab.$name
     ttk::frame $pconf
 
+    # must be in that order
     addprovider-gui-profilename $tab $name
-    addprovider-gui-username $tab $name $dispname
-    addprovider-gui-password $tab $name $dispname
     addprovider-gui-importline $tab $name
-    hypertext $pconf.link "Buy account on <https://fruho.com/redirect?urlid=airvpn&cn=$::model::Cn><airvpn.org>"
+    addprovider-gui-selectfiles $tab $name
+    hypertext $pconf.link "No support for auto import. See <https://fruho.com/howto/3><howto.>"
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }
-        
+
         
 proc ::airvpn::add-to-treeview-plist {plist} {
     variable name
@@ -45,54 +42,26 @@ proc ::airvpn::add-to-treeview-plist {plist} {
     $plist insert {} end -id $name -image [img load 16/logo_$name] -values [list $dispname]
 }
 
+
 # this is csp coroutine
-proc ::airvpn::ImportClicked {tab args} {
+proc ::airvpn::ImportClicked {tab name} {
     try {
-        variable name
-        variable dispname
-        variable host
-        variable port
-        variable path_config
-        variable path_plans
-        variable username
-        variable password
         variable newprofilename
+        set newprofileid [name2id $newprofilename]
+        ::from_file::ImportClicked $tab $name
+        set plans [dict-pop $::model::Profiles $newprofileid plans {}]
+        lassign $plans planid plan
+        set slist [dict-pop $plan slist {}]
+        set sitem [lindex $slist 0]
+        set ovses [dict-pop $sitem ovses {}]
+        set ovs [lindex $ovses 0]
+        set proto [dict-pop $ovs proto {}]
+        set port [dict-pop $ovs port {}]
 
-        set profileid [name2id $newprofilename]
-
-        set pconf $tab.$name
-        importline-update $pconf "Importing configuration from $dispname" disabled spin
-    
-        set result [vpapi-config-direct $newprofilename $host $port $path_config?[this-pcv] $username $password]
-        if {$result != 200} {
-            importline-update $pconf [http2importline $result] normal empty
-            return
-        }
-
-        set result [vpapi-plans-direct $newprofilename $host $port $path_plans?[this-pcv] $username $password]
-        if {$result != 200} {
-            importline-update $pconf [http2importline $result] normal empty
-            return
-        }
-
-        # save in the model to be able later refresh the plans via vpapi
-        dict set ::model::Profiles $profileid vpapi_username $username
-        dict set ::model::Profiles $profileid vpapi_password $password
-        dict set ::model::Profiles $profileid vpapi_host $host
-        dict set ::model::Profiles $profileid vpapi_port $port
-        dict set ::model::Profiles $profileid vpapi_path_plans $path_plans
-        dict set ::model::Profiles $profileid provider $name
-
-        importline-update $pconf "" normal empty
-        set ::${name}::username ""
-        set ::${name}::password ""
-    
-        # when repainting tabset select the newly created tab
-        set ::model::selected_profile $profileid
-        tabset-profiles .c.tabsetenvelope
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
 }
+
 
 lappend ::model::Supported_providers {150 airvpn}

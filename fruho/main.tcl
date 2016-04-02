@@ -389,8 +389,8 @@ proc main-gui {} {
         # don't rely on systray icon
         package require tktray
         tktray::icon .systray -image [img load 16/logo] -docked 1 -visible 1
-        .systray balloon "Fruho installed" 5000
-        bind .systray <ButtonPress-3> [list pq 99999]
+        #.systray balloon "Fruho installed" 5000
+        #bind .systray <ButtonPress-3> [list pq 99999]
 
 
 
@@ -1196,8 +1196,36 @@ proc addprovider-gui-importline {tab name} {
     grid columnconfigure $pconf 0 -weight 4 -uniform 1
     grid columnconfigure $pconf 1 -weight 4 -uniform 1
     grid columnconfigure $pconf 2 -weight 4 -uniform 1
-    grid $pconf.importline -sticky news -columnspan 3
+    grid $pconf.importline -row 9 -sticky news -columnspan 3
 }
+
+proc addprovider-gui-selectfiles {tab name} {
+    set pconf $tab.$name
+    ttk::frame $pconf.select
+    ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
+    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $tab $name]
+    grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
+    grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
+    grid columnconfigure $pconf.select 0 -weight 1
+    ttk::label $pconf.selectinfo -foreground grey
+    grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
+    grid $pconf.selectinfo -row 4 -column 2 -sticky news
+    set ::model::Gui_selected_files ""
+    addprovider-gui-selectfiles-update $tab $name
+}
+
+
+proc addprovider-gui-selectfiles-update {tab name} {
+    set pconf $tab.$name
+    if {[llength $::model::Gui_selected_files]} {
+        $pconf.select.msg configure -text "[llength $::model::Gui_selected_files] file(s) selected"
+        $pconf.importline.button configure -state normal
+    } else {
+        $pconf.select.msg configure -text "Select configuration files"
+        $pconf.importline.button configure -state disabled
+    }
+}
+
 
 ########################################
 

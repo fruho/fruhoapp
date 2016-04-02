@@ -23,19 +23,12 @@ proc ::cyberghost::create-import-frame {tab} {
     ttk::frame $pconf
 
     addprovider-gui-profilename $tab $name
-    ttk::frame $pconf.select
-    ttk::label $pconf.select.msg -text "Select configuration files" -anchor e
-    ttk::button $pconf.select.button -image [img load 16/logo_from_file] -command [list go ::from_file::SelectFileClicked $pconf]
-    grid $pconf.select.msg -row 0 -column 0 -sticky news -padx 5 -pady 5
-    grid $pconf.select.button -row 0 -column 1 -sticky e -padx 5 -pady 5
-    grid columnconfigure $pconf.select 0 -weight 1
-    ttk::label $pconf.selectinfo -foreground grey
-    grid $pconf.select -row 4 -column 0 -sticky news -columnspan 2
-    grid $pconf.selectinfo -row 4 -column 2 -sticky news
+
     addprovider-gui-username $tab $name $dispname "e.g. 4384732_8j3StDv8Uw"
     addprovider-gui-password $tab $name $dispname
     addprovider-gui-importline $tab $name
-    hypertext $pconf.link "Only premium accounts and no support for auto import. See <https://fruho.com/howto/2><howto.>"
+    addprovider-gui-selectfiles $tab $name
+    hypertext $pconf.link "No support for auto import. See <https://fruho.com/howto/2><howto.>"
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }

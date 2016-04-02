@@ -33,7 +33,7 @@ proc ::securitykiss::create-import-frame {tab} {
     addprovider-gui-username $tab $name $dispname "e.g. client12345678"
     addprovider-gui-password $tab $name $dispname
     addprovider-gui-importline $tab $name
-    hypertext $pconf.link "Create free or premium account on <https://fruho.com/redirect?urlid=securitykiss&cn=$::model::Cn><securitykiss.com>"
+    hypertext $pconf.link "Create <https://fruho.com/redirect?urlid=securitykissaccount&cn=$::model::Cn><free> or <https://fruho.com/redirect?urlid=securitykisspricing&cn=$::model::Cn><premium> account on <https://fruho.com/redirect?urlid=securitykiss&cn=$::model::Cn><securitykiss.com>"
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
     return $pconf
 }

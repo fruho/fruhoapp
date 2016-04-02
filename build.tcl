@@ -243,7 +243,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.17
+set ::FRUHO_VERSION 0.0.18
 prepare-lib sklib 0.0.0
 #build-total
 build-total x86_64
@@ -251,6 +251,8 @@ build-total x86_64
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 #push-update linux [this-arch] vbox_123
+#push-update linux ix86 vbox_123
+#push-update linux x86_64 vbox_123
 #release hypatia2
 
 
