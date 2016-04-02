@@ -170,8 +170,8 @@ proc dbg {args} {
 
 # this is utility for the server side
 # returns 1 on success, 0 otherwise
-proc create-signature {privkey filepath} {
-    set cmd [list openssl dgst -sha1 -sign $privkey $filepath > $filepath.sig]
+proc create-signature {privkey filepath {opensslarg ""}} {
+    set cmd [list openssl dgst -sha1 -sign $privkey $filepath $opensslarg > $filepath.sig]
     log create-signature: $cmd
     # -ignorestderr - Stops the exec command from treating the output of messages to the pipeline's standard error channel as an error case.
     if {[catch {exec -ignorestderr {*}$cmd} out err]} {

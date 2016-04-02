@@ -195,8 +195,9 @@ proc release {gituser} {
     lappend ::auto_path [file normalize ./lib/generic]
     package require json
 
-    puts "Enter your github password:"
-    set gitpass [gets stdin]
+#    puts "Enter your github password:"
+#    set gitpass [gets stdin]
+    set gitpass $::env(FRUHO_GITHUB_RELEASE_PASSWORD)
 
     #set published_at [github-latest-release-date]
 
@@ -227,8 +228,8 @@ proc push-update {os arch tohost} {
     set privkey [file normalize ../confidential/sk/keys/fruho/signer/signer_private.pem]
 
     # sign the binaries
-    create-signature $privkey $fc
-    create-signature $privkey $fd
+    create-signature $privkey $fc env:FRUHO_SIGN_PASSWORD
+    create-signature $privkey $fd env:FRUHO_SIGN_PASSWORD
 
     # zip the bundle
     set zip $updatedir/update.zip 
@@ -243,7 +244,7 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.18
+set ::FRUHO_VERSION 0.0.19
 prepare-lib sklib 0.0.0
 build-total
 #build-total x86_64
