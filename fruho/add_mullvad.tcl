@@ -30,6 +30,9 @@ proc ::mullvad::create-import-frame {tab} {
     set pconf $tab.$name
     ttk::frame $pconf
 
+    ttk::label $pconf.notsupported -text "Mullvad VPN no longer supported" 
+    grid $pconf.notsupported -row 1 -column 2 -sticky news -pady 5
+if 0 {
     addprovider-gui-profilename $tab $name
     ttk::label $pconf.usernamelabel -text "Mullvad account number" -anchor e
     ttk::entry $pconf.usernameinput -textvariable ::${name}::username
@@ -40,6 +43,8 @@ proc ::mullvad::create-import-frame {tab} {
     addprovider-gui-importline $tab $name
     hypertext $pconf.link "Create account on <https://fruho.com/redirect?urlid=mullvad&cn=$::model::Cn><mullvad.net>"
     grid $pconf.link -sticky news -columnspan 3 -padx 10 -pady 10
+}
+
     return $pconf
 }
         
