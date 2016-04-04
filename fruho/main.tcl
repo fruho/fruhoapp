@@ -915,6 +915,7 @@ proc is-config-received {profileid} {
 
 proc curl-dispatch {chout cherr hostport args} {
     if {[string match bootstrap:* $hostport]} {
+        # in cadir rename crts to have hash names: openssl x509 -hash -in your.crt -noout
         curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cadir [model CADIR] {*}$args
     } else {
         curl-retry $chout $cherr -hostports [lrepeat 3 $hostport] {*}$args
@@ -1738,6 +1739,10 @@ proc frame-toolbar {p} {
     set tb [ttk::frame $p.tb -borderwidth 0 -relief raised]
     hypertext $tb.improve "Help improve this program. Provide your <https://fruho.com/contact><feedback.> We listen."
     button $tb.options -relief flat -command OptionsClicked
+    #TODO convert to consistent ttk or plain theme
+    #ttk::style configure TStyleFlat -relief flat
+    #ttk::button $tb.options -style TStyleFlat -command OptionsClicked
+    #ttk::button $tb.options -command OptionsClicked
     img place 24/options  $tb.options
     label $tb.bang
     img place 16/bang $tb.bang
@@ -2686,7 +2691,7 @@ proc this-pcv {} {
 # This proc is a mess - no clear semantics for retrying on failure (is non-200 http status code a success to be pushed to tryout, or fail to tryerr, or retry?)
 proc curl-retry {tryout tryerr args} {
     try {
-        fromargs {-urlpath -indiv_timeout -hostports -hindex -proto -expected_hostname -method -gettofile -postfromfile -basicauth -cadir} \
+        fromargs {-urlpath -indiv_timeout -hostports -hindex -proto -expected_hostname -method -gettofile -postfromfile -basicauth -cadir -cafile} \
                  {/ 5000 {} _ https}
         upvar $hindex host_index
         if {![info exists host_index]} {
@@ -2735,12 +2740,13 @@ proc curl-retry {tryout tryerr args} {
                     dict set opts -querychannel [open $postfromfile r] 
                     dict set opts -type text/plain
                 }
-                # reregister tls handling with proper CAdir store
-                if {$cadir eq ""} {
-                    #TODO make it cross-platform
-                    https init -cadir /etc/ssl/certs
-                } else {
+                # reregister tls handling with proper CAdir/CAfile store
+                # this is quite nasty because https/tls CA store selection is stateful
+                if {$cadir ne ""} {
                     https init -cadir $cadir
+                }
+                if {$cafile ne ""} {
+                    https init -cafile $cafile
                 }
                 # use hostip for url but expect host for TLS domain verification if not overwritten by expected_hostname option
                 # -expected-hostname given in options takes precedence over individual resolved host names
