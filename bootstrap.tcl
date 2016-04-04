@@ -66,30 +66,40 @@ proc platforminfo {} {
 }
 
 proc locate-fpm {} {
-    if {[catch {exec fpm --version}] == 1} {
+    if {[catch {exec fpm --version}] != 1} {
         return fpm
-    } else if {[catch {exec fpm.ruby2.1 --version}] == 1} {
+    } elseif {[catch {exec fpm.ruby2.1 --version}] != 1} {
         return fpm.ruby2.1
     } else {
         return ""
     }
 }
 
+proc find-pkg-mgr {} {
+    # detect in the order: zypper, apt-get, yum (others: pacman, portage, urpmi, dnf, slapt-geti emerge)
+    set candidates {zypper apt-get yum}
+    foreach c $candidates {
+        if {![catch {exec $c --version}]} {
+            return $c
+        }
+    }
+    return ""
+}
+
 proc install-fpm {} {
     if {[locate-fpm] eq ""} {
         puts "Installing fpm"
 
-        set pkgmgr [linuxdeps find-pkg-mgr]
-        #set pkgmgrcmd [linuxdeps find-pkg-mgr-cmd]
+        set pkgmgr [find-pkg-mgr]
         if {$pkgmgr eq "apt-get"} {
             ex sudo apt-get update --fix-missing
             ex sudo apt-get -fy install git ruby-full ruby-dev gcc rpm make
             catch {ex sudo apt-get -fy install rubygems}
             ex sudo apt-get -fy install rubygems-integration
         } elseif {$pkgmgr eq "zypper"} {
-            ex sudo zypper install ruby-devel gcc make rpm-build
+            ex sudo zypper --non-interactive install ruby-devel gcc make rpm-build
         } elseif {$pkgmgr eq "yum"} {
-            ex sudo yum install ruby-devel gcc make rpm-build
+            ex sudo yum -y install ruby-devel gcc make rpm-build
         }
 
         ex sudo gem install fpm
