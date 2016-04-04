@@ -98,8 +98,9 @@ proc build-deb-rpm {arch} {
         file copy fruho/exclude/fruho $distdir/usr/local/bin/fruho
         cd $distdir
         set fpmopts "-a [fpm-arch $arch] -s dir -n fruho -v $::FRUHO_VERSION --maintainer \"Fruho Team \<dev@fruho.com\>\" --description \"An open-source, zero-configuration, VPN manager that supports automatic setup and allows easy switching between VPN providers.\" --url \"https://fruho.com\" --license \"GPL2\" --config-files etc/fruhod/keys/signer_public.pem --config-files etc/init.d/fruhod  --before-install ../../fruhod/exclude/fruhod.preinst --after-install ../../fruhod/exclude/fruhod.postinst --before-remove ../../fruhod/exclude/fruhod.prerm --after-remove ../../fruhod/exclude/fruhod.postrm usr etc"
-        ex fpm -t deb {*}$fpmopts
-        ex fpm -t rpm --rpm-autoreqprov {*}$fpmopts
+        set fpmcmd [locate-fpm]
+        ex $fpmcmd -t deb {*}$fpmopts
+        ex $fpmcmd -t rpm --rpm-autoreqprov {*}$fpmopts
         cd ../..
     } 
 }
@@ -246,15 +247,15 @@ proc push-update {os arch tohost} {
 
 set ::FRUHO_VERSION 0.0.19
 prepare-lib sklib 0.0.0
-build-total
-#build-total x86_64
+#build-total
+build-total x86_64
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
 #push-update linux [this-arch] vbox_123
-push-update linux ix86 vbox_123
-push-update linux x86_64 vbox_123
-release hypatia2
+#push-update linux ix86 vbox_123
+#push-update linux x86_64 vbox_123
+#release hypatia2
 
 
 # sudo dpkg -i ./dist/linux-x86_64/fruho_${::FRUHO_VERSION}_amd64.deb

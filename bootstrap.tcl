@@ -65,15 +65,35 @@ proc platforminfo {} {
     parray ::tcl_platform
 }
 
+proc locate-fpm {} {
+    if {[catch {exec fpm --version}] == 1} {
+        return fpm
+    } else if {[catch {exec fpm.ruby2.1 --version}] == 1} {
+        return fpm.ruby2.1
+    } else {
+        return ""
+    }
+}
 
 proc install-fpm {} {
-    if {[catch {exec fpm --version}] == 1} {
+    if {[locate-fpm] eq ""} {
         puts "Installing fpm"
-        ex sudo apt-get update --fix-missing
-        ex sudo apt-get -fy install git ruby-full ruby-dev gcc rpm make
-        catch {ex sudo apt-get -fy install rubygems}
-        ex sudo apt-get -fy install rubygems-integration
+
+        set pkgmgr [linuxdeps find-pkg-mgr]
+        #set pkgmgrcmd [linuxdeps find-pkg-mgr-cmd]
+        if {$pkgmgr eq "apt-get"} {
+            ex sudo apt-get update --fix-missing
+            ex sudo apt-get -fy install git ruby-full ruby-dev gcc rpm make
+            catch {ex sudo apt-get -fy install rubygems}
+            ex sudo apt-get -fy install rubygems-integration
+        } elseif {$pkgmgr eq "zypper"} {
+            ex sudo zypper install ruby-devel gcc make rpm-build
+        } elseif {$pkgmgr eq "yum"} {
+            ex sudo yum install ruby-devel gcc make rpm-build
+        }
+
         ex sudo gem install fpm
+
     } else {
         puts "fpm already present"
     }
