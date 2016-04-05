@@ -17,7 +17,7 @@ namespace eval ::https {
     variable sock2host
     variable sock2error
     variable host2expected
-    namespace export curl curl-async wget wget-async socket init parseurl
+    namespace export curl curl-async wget wget-async socket init parseurl locate-ca-store
     namespace ensemble create
 }
 
@@ -37,10 +37,39 @@ proc ::https::debug-http {tok} {
 # -cadir dir            # Provide the directory containing the CA certificates.
 # -cafile filename      # Provide the CA file.
 # -certfile filename    # Provide the certificate to use. 
+# ""                    # Only unregister current https handler
 proc ::https::init {args} {
     catch {http::unregister https}
-    # We cannot use the original tls::socket because it does not validate Host against Common Name
-    http::register https 443 [list https::socket -require 1 -command ::https::tls-callback -ssl2 0 -ssl3 0 -tls1 1 {*}$args]
+    if {$args ne ""} {
+        # We cannot use the original tls::socket because it does not validate Host against Common Name
+        http::register https 443 [list https::socket -require 1 -command ::https::tls-callback -ssl2 0 -ssl3 0 -tls1 1 {*}$args]
+    }
+}
+
+
+
+# Try various locations of CA store
+# returns <cafile>
+# TODO if necesary return "-cadir <cadir>" or "-cafile <cafile>"
+proc ::https::locate-ca-store {} {
+    set cafiles {}
+    lappend cafiles "/etc/ssl/certs/ca-certificates.crt"                ;# Debian/Ubuntu/Gentoo etc.
+    lappend cafiles "/etc/pki/tls/certs/ca-bundle.crt"                  ;# Fedora/RHEL
+    lappend cafiles "/etc/pki/tls/certs/ca-bundle.trust.crt"            ;# Extended Validation certs Fedora/RHEL
+    lappend cafiles "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    lappend cafiles "/etc/ssl/ca-bundle.pem"                            ;# OpenSUSE
+    lappend cafiles "/etc/pki/tls/cacert.pem"                           ;# OpenELEC
+    lappend cafiles "/etc/ssl/certs/ca-bundle.crt"
+
+    foreach cafile $cafiles {
+        if {[file isfile $cafile] && [file size $cafile] > 1000} {
+            return $cafile
+        }
+    }
+    #set cadirs {}
+    #lappend cadirs "/etc/ssl/certs"
+
+    return ""
 }
 
 
@@ -322,6 +351,6 @@ proc ::https::wget-callback {tok} {
 }
 
 
-# Do default initialization with Linux cert store location
-::https::init -cadir /etc/ssl/certs
+#model castore option
+::https::init -cafile [::https::locate-ca-store]
 

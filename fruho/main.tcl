@@ -150,9 +150,19 @@ proc main {} {
     
         model load
 
-        # Copy cadir because it  must be accessible from outside of the starkit
+        # Copy cadir outside of the vfs starkit because it must be accessible from outside (tls package requires regular filestystem)
         # Overwrites certs on every run
-        copy-merge [file join [file dir [info script]] certs] [model CADIR]
+        copy-merge [file join [file dir [info script]] certs] [model FRUHO_CADIR]
+
+        if {$::model::ca_bundle eq ""} {
+            set castore [https locate-ca-store]
+            # if castore location not detected, as a last resort set cafile location to fruho provided bundle
+            if {$castore eq ""} {
+                set castore [model FRUHO_CAFILE]
+            }
+            set ::model::ca_bundle $castore
+        }
+
     
         if {$params(cli) || ![unix is-x-running] || $params(build) || $params(version) || $params(id) || $params(generate-keys) || $params(add-launcher) || $params(remove-launcher) || $params(dump-profile-golang) ne ""} {
             set ::model::Ui cli
@@ -911,14 +921,12 @@ proc is-config-received {profileid} {
 }
 
 
-
-
 proc curl-dispatch {chout cherr hostport args} {
     if {[string match bootstrap:* $hostport]} {
-        # in cadir rename crts to have hash names: openssl x509 -hash -in your.crt -noout
-        curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cadir [model CADIR] {*}$args
+        # if CADIR used: in cadir rename crts to have hash names: openssl x509 -hash -in your.crt -noout
+        curl-retry $chout $cherr -hostports $::model::Hostports -hindex ::model::hostport_lastok -expected_hostname vbox.fruho.com -cafile [model FRUHO_CAFILE] {*}$args
     } else {
-        curl-retry $chout $cherr -hostports [lrepeat 3 $hostport] {*}$args
+        curl-retry $chout $cherr -hostports [lrepeat 3 $hostport] -cafile $::model::ca_bundle {*}$args
     }
 }
 
@@ -2869,7 +2877,7 @@ proc ffread-loop {} {
             set line [<- $::model::Chan_ffread]
             switch -regexp -matchvar tokens $line {
                 {^ctrl: (.*)$} {
-                    log OPENVPN CTRL: [lindex $tokens 1]
+                    log fruhod>> $line
                     switch -regexp -matchvar details [lindex $tokens 1] {
                         {^Config loaded} {
                             ffwrite start
@@ -2903,6 +2911,7 @@ proc ffread-loop {} {
                     }
                 }
                 {^ovpn: (.*)$} {
+                    log fruhod>> $line
                     catch {
                         puts $::model::Openvpnlog [lindex $tokens 1]
                         flush $::model::Openvpnlog
@@ -2942,7 +2951,6 @@ proc ffread-loop {} {
                     $::model::Chan_stat_report <- $stat
                 }
             }
-            log fruhod>> $line
         }
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]

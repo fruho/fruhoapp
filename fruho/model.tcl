@@ -112,6 +112,9 @@ namespace eval ::model {
     # number of total/traffic probes saved and used for moving average - this is to be saved in config
     variable previous_total_probes 5
 
+    # auto detected but configurable location of the CA store
+    variable ca_bundle ""
+
 
     variable Gui_openvpn_connection_timeout 25
     variable openvpn_connection_timeout 25
@@ -165,9 +168,15 @@ proc ::model::PROFILEDIR {} {
 proc ::model::UPGRADEDIR {} {
     return [file join [model CONFIGDIR] upgrade]
 }
-proc ::model::CADIR {} {
+# we switched to use CAFILE instead
+proc ::model::FRUHO_CADIR {} {
     return [file join [model CONFIGDIR] certs]
 }
+# fruho provided CA certificates
+proc ::model::FRUHO_CAFILE {} {
+    return [file join [model FRUHO_CADIR] ca-certificates.crt]
+}
+
 
 # Display all model variables to stderr
 proc ::model::print {} {
