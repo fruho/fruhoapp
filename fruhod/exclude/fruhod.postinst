@@ -31,5 +31,6 @@ if [ -x /usr/local/bin/fruho.bin ]; then
     /usr/local/bin/fruho.bin --add-launcher
     
     # Run fruho client. fruho client responsible for dropping root privileges and logging to ~/.fruho/fruho.log
-    /usr/local/bin/fruho
+    # Refrain from running in postinst - too problematic on distros other than Debian/Ubuntu
+    # /usr/local/bin/fruho
 fi

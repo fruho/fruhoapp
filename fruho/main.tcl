@@ -182,12 +182,13 @@ proc main {} {
             main-exit nosave
         }
         if {$params(add-launcher)} {
-            puts stderr [log Adding Desktop Launcher]
+            log Adding Desktop Launcher
             unix add-launcher fruho
+            puts stderr "Fruho shortcut added to your desktop"
             main-exit nosave
         }
         if {$params(remove-launcher)} {
-            puts stderr [log Removing Desktop Launcher]
+            log Removing Desktop Launcher
             unix remove-launcher fruho
             main-exit nosave
         }
@@ -284,7 +285,7 @@ proc main-generate-keys {} {
     puts stderr [log Generating RSA keys]
     set privkey [ovpndir fruho client.key]
     if {[file exists $privkey]} {
-        puts stderr [log RSA key $privkey already exists]
+        log RSA key $privkey already exists
     } else {
         if {![generate-rsa $privkey]} {
             puts stderr [log Could not generate RSA keys]
@@ -296,7 +297,7 @@ proc main-generate-keys {} {
     }
     set csr [ovpndir fruho client.csr]
     if {[file exists $csr]} {
-        puts stderr [log CSR $csr already exists]
+        log CSR $csr already exists
     } else {
         set cn [generate-cn]
         if {![generate-csr $privkey $csr $cn]} {
