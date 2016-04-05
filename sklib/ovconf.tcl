@@ -358,7 +358,7 @@ proc ::ovconf::del-meta {conf} {
     return [::ovconf::del $conf --meta]
 }
 
-# get property value by key from a plain config file
+# get property value by key from a plain config file (newline separated lines)
 # return list of values (list of single empty string for key with no value)
 # or empty string if key not found
 proc ::ovconf::raw-get {config key} {

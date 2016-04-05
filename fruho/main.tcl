@@ -122,7 +122,7 @@ proc main {} {
     try {
         unix relinquish-root
         # every created file by the app should be private
-        umask 0077
+        umask 0033
         redirect-stdout
     
         # watch out - cmdline is buggy. For example you cannot define help option, it conflicts with the implicit one
@@ -892,7 +892,6 @@ proc rebuild-slist-with-geoloc {slist loc} {
     }
     return $newslist
 }
-
 
 
 proc ovpndir {profileid args} {

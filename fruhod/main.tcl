@@ -169,6 +169,7 @@ proc ffwrite {prefix msg {dolog 1}} {
 # adjust-config should strip the ovpn config of this data to make the result suitable to pass to openvpn
 # Also it should add missing options
 # It should produce legal openvpn config
+# Also replace -ca -cert and -key paths from homedir to /etc/fruhod/current based to workaround SELinux problem on Fedora
 proc adjust-config {conf} {
     # adjust management port
     set mgmt [::ovconf::get $conf management]
@@ -206,8 +207,27 @@ proc adjust-config {conf} {
 
     # delete meta info
     set conf [::ovconf::del-meta $conf]
+
+    # replace -ca -cert and -key paths to /etc/fruhod/current as a workaround for SELinux problem on Fedora
+    set conf [copy-replace-path-current $conf --ca]
+    set conf [copy-replace-path-current $conf --cert]
+    set conf [copy-replace-path-current $conf --key]
+
     return $conf
 }
+
+proc copy-replace-path-current {conf opt} {
+    set path [lindex [::ovconf::get $conf $opt] 0]
+    if {$path ne ""} {
+        set tail [file tail $path]
+        set new [file join /etc/fruhod/current $tail]
+        file copy -force $path $new
+        set conf [::ovconf::cset $conf $opt $new]
+    }
+    return $conf
+}
+
+
 
 # validate config paths and store config in state
 proc load-config {conf} {
