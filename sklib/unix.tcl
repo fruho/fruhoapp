@@ -25,6 +25,7 @@ proc ::unix::relinquish-root {} {
     # First check the current privileges (has-root as opposed to is-root)
     # id command from Tclx package
     if {![::unix::has-root]} {
+	#puts stderr "relinquish-root: has-root: returning [id user]"
         return [id user]
     }
     # Next, if currently root, check how the user logged in (from logname or sudo variables)
@@ -32,6 +33,7 @@ proc ::unix::relinquish-root {} {
     if {[catch {exec logname} user]} {
         # Fall back to checking SUDO_USER
         set user $::env(SUDO_USER)
+	#puts stderr "relinquish-root: SUDO_USER from env: $user"
         # If empty then I don't know, assume root
         if {[llength $user] == 0} {
             set user root
@@ -42,6 +44,8 @@ proc ::unix::relinquish-root {} {
         return root
     }
     set primary_group [exec id -g -n $user]
+    #puts stderr "relinquish-root: primary_group: $primary_group"
+    #puts stderr "relinquish-root: user: $user"
     # the order is relevant - first change gid then uid
     id group $primary_group
     id user $user
