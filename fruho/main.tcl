@@ -121,7 +121,7 @@ proc restore-stdout {} {
 proc main {} {
     try {
         unix relinquish-root
-        # every created file by the app should be private
+        # files created by the app (regular user) should be readable by root (fruhod)
         umask 0033
         redirect-stdout
     

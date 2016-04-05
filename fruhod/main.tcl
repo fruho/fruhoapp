@@ -217,6 +217,7 @@ proc adjust-config {conf} {
 }
 
 proc copy-replace-path-current {conf opt} {
+    file mkdir /etc/fruhod/current
     set path [lindex [::ovconf::get $conf $opt] 0]
     if {$path ne ""} {
         set tail [file tail $path]
@@ -490,6 +491,9 @@ proc OvpnExit {code} {
     if {[ovpn-pid] != 0} {
         ffwrite ctrl "OpenVPN with pid [ovpn-pid] stopped"
     }
+
+    file delete -force /etc/fruhod/current
+
     dns-restore
     model reset-ovpn-state
 }
