@@ -32,7 +32,11 @@ proc ::unix::relinquish-root {} {
     # When running starpack in background (with &) logname may error with "logname: no login name"
     if {[catch {exec logname} user]} {
         # Fall back to checking SUDO_USER
-        set user $::env(SUDO_USER)
+        if {[info exists ::env(SUDO_USER)]} {
+            set user $::env(SUDO_USER)
+        } else {
+            set user root
+        }
 	#puts stderr "relinquish-root: SUDO_USER from env: $user"
         # If empty then I don't know, assume root
         if {[llength $user] == 0} {
