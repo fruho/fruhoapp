@@ -337,6 +337,11 @@ proc main-gui {} {
         log Running GUI
         # TODO fruho client may be started before all Tk deps are installed, so run in CLI first and check for Tk a few times with delay
         package require Tk 
+        #win% ttk::style theme names
+        #winnative clam alt default classic xpnative
+        #lin% ttk::style theme names
+        #clam alt default classic
+        ttk::style theme use default
         wm title . "Fruho"
         wm iconphoto . -default [img load 16/logo] [img load 24/logo] [img load 32/logo] [img load 64/logo]
         wm deiconify .
@@ -375,9 +380,9 @@ proc main-gui {} {
         bind . <Control-w> main-exit
         bind . <Control-q> main-exit
     
-        frame .mainstatusline
-        label .mainstatusline.msg
-        label .mainstatusline.spin
+        ttk::frame .mainstatusline
+        ttk::label .mainstatusline.msg
+        ttk::label .mainstatusline.spin
         img place 16/empty .mainstatusline.spin
         # TODO consider logging editor stderr/stdout to a file for debugging
         hyperlink .mainstatusline.link -command [list exec xdg-open [file normalize [model OPENVPNLOGFILE]] >>& /dev/null &]
@@ -493,7 +498,7 @@ proc check-for-updates {uframe} {
                 } else {
                     set ::model::Latest_version 0
                 }
-                puts stderr "Check for updates: $data"
+                log "Check for updates success: $data"
             }
             <- $cherr {
                 set ::model::Latest_version 0
@@ -1195,8 +1200,7 @@ proc addprovider-gui-importline {tab name} {
     set pconf $tab.$name
     ttk::frame $pconf.importline
     ttk::button $pconf.importline.button -text "Import configuration" -command [list go ::${name}::ImportClicked $tab $name]
-    # must use non-ttk label for proper animated gif display
-    label $pconf.importline.img 
+    ttk::label $pconf.importline.img 
     img place 24/empty $pconf.importline.img
     ttk::label $pconf.importline.msg
     grid $pconf.importline.button -row 0 -column 0 -padx 10
@@ -1514,18 +1518,18 @@ proc frame-dashboard {p} {
 }
 
 proc dash-plan {p} {
-    set dbplan [frame $p.dbplan]
+    set dbplan [ttk::frame $p.dbplan]
     set f1 [dynafont -size 12]
     set f2 [dynafont -weight bold -size 12]
-    frame $dbplan.planname
-    label $dbplan.planname.lbl -text "Plan:" -font $f1
-    label $dbplan.planname.val -font $f2
+    ttk::frame $dbplan.planname
+    ttk::label $dbplan.planname.lbl -text "Plan:" -font $f1
+    ttk::label $dbplan.planname.val -font $f2
     grid $dbplan.planname.lbl -row 0 -column 0 -sticky w
     grid $dbplan.planname.val -row 0 -column 1 -sticky w
 
-    frame $dbplan.planexpiry
-    label $dbplan.planexpiry.lbl -font $f1
-    label $dbplan.planexpiry.val -font $f2
+    ttk::frame $dbplan.planexpiry
+    ttk::label $dbplan.planexpiry.lbl -font $f1
+    ttk::label $dbplan.planexpiry.val -font $f2
     grid $dbplan.planexpiry.lbl -row 0 -column 0 -sticky e
     grid $dbplan.planexpiry.val -row 0 -column 1 -sticky e
  
@@ -1537,7 +1541,7 @@ proc dash-plan {p} {
 }
 
 proc dash-gauge {p} {
-    set db [frame $p.db]
+    set db [ttk::frame $p.db]
 
     set font1 [dynafont -size 14]
     set font2 [dynafont -size 20]
@@ -1547,32 +1551,32 @@ proc dash-gauge {p} {
     set gaugeh 10
 
     # header
-    label $db.linkdir
-    label $db.speedgaugelabel
-    label $db.speedlabel -text "Speed" -anchor e -font $font1
-    label $db.speedlabelunit
-    label $db.totallabel -text "Total" -anchor e -font $font1
-    label $db.totallabelunit
+    ttk::label $db.linkdir
+    ttk::label $db.speedgaugelabel
+    ttk::label $db.speedlabel -text "Speed" -anchor e -font $font1
+    ttk::label $db.speedlabelunit
+    ttk::label $db.totallabel -text "Total" -anchor e -font $font1
+    ttk::label $db.totallabelunit
    
     # up row
-    label $db.linkup -image [img load 32/uplink] -anchor e
+    ttk::label $db.linkup -image [img load 32/uplink] -anchor e
     frame $db.speedupgauge -background $gaugebg -width $gaugew -height $gaugeh
     frame $db.speedupgauge.fill -height $gaugeh
     place $db.speedupgauge.fill -x 0 -y 0
-    label $db.speedup -text "0" -anchor e -font $font2
-    label $db.speedupunit -text "kbps" -anchor w -font $font1
-    label $db.totalup -text "0" -anchor e -font $font2
-    label $db.totalupunit -text "MB" -anchor w -font $font1
+    ttk::label $db.speedup -text "0" -anchor e -font $font2
+    ttk::label $db.speedupunit -text "kbps" -anchor w -font $font1
+    ttk::label $db.totalup -text "0" -anchor e -font $font2
+    ttk::label $db.totalupunit -text "MB" -anchor w -font $font1
 
     # down row
-    label $db.linkdown -image [img load 32/downlink] -anchor e
+    ttk::label $db.linkdown -image [img load 32/downlink] -anchor e
     frame $db.speeddowngauge -background $gaugebg -width $gaugew -height $gaugeh
     frame $db.speeddowngauge.fill -height $gaugeh
     place $db.speeddowngauge.fill -x 0 -y 0
-    label $db.speeddown -text "0" -anchor e -font $font2
-    label $db.speeddownunit -text "kbps" -anchor w -font $font1
-    label $db.totaldown -text "0" -anchor e -font $font2
-    label $db.totaldownunit -text "MB" -anchor w -font $font1
+    ttk::label $db.speeddown -text "0" -anchor e -font $font2
+    ttk::label $db.speeddownunit -text "kbps" -anchor w -font $font1
+    ttk::label $db.totaldown -text "0" -anchor e -font $font2
+    ttk::label $db.totaldownunit -text "MB" -anchor w -font $font1
 
     set col -1
     grid $db.linkdir -row 1 -column [incr col] -sticky news -padx 10 -pady 5
@@ -1723,15 +1727,15 @@ proc frame-usage-meter {p} {
     ttk::label $um.usedlabel -textvariable ::model::Gui_usedlabel -background $bg1 -width 15
     set barw $::model::layout_barw
     set barh $::model::layout_barh
-    frame $um.usedbar -background $bg3 -width $barw -height $barh
-    frame $um.usedbar.fill -background $fgused -width 0 -height $barh
+    ttk::frame $um.usedbar -background $bg3 -width $barw -height $barh
+    ttk::frame $um.usedbar.fill -background $fgused -width 0 -height $barh
     place $um.usedbar.fill -x 0 -y 0
     grid columnconfigure $um.usedbar 0 -weight 1
     #ttk::label $um.usedsummary -text "12.4 GB / 50 GB" -background $bg1
     ttk::label $um.usedsummary -textvariable ::model::Gui_usedsummary -background $bg1 -width 15
     ttk::label $um.elapsedlabel -textvariable ::model::Gui_elapsedlabel -background $bg1 -width 15
-    frame $um.elapsedbar -background $bg3 -width $barw -height $barh
-    frame $um.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
+    ttk::frame $um.elapsedbar -background $bg3 -width $barw -height $barh
+    ttk::frame $um.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
     place $um.elapsedbar.fill -x 0 -y 0
     #ttk::label $um.elapsedsummary -text "3 days 14 hours / 31 days" -background $bg1
     ttk::label $um.elapsedsummary -textvariable ::model::Gui_elapsedsummary -background $bg1 -width 15
@@ -1752,7 +1756,7 @@ proc frame-toolbar {p} {
     #ttk::button $tb.options -style TStyleFlat -command OptionsClicked
     #ttk::button $tb.options -command OptionsClicked
     img place 24/options  $tb.options
-    label $tb.bang
+    ttk::label $tb.bang
     img place 16/bang $tb.bang
     grid $tb.bang -row 0 -column 0 -sticky w
     grid $tb.improve -row 0 -column 1 -sticky w
@@ -1768,7 +1772,7 @@ proc frame-ipinfo {p} {
     set bg2 $::model::layout_bg2
     set inf [frame $p.inf -background $bg2]
     ttk::label $inf.externaliplabel -text [_ "Your IP:"] -background $bg2
-    label $inf.externalip -background $bg2 -compound center
+    ttk::label $inf.externalip -background $bg2 -compound center
     hyperlink $inf.geocheck -image [img load 16/external] -background $bg2 -command [list launchBrowser "https://fruho.com/geo"]
     grid $inf.externaliplabel -column 0 -row 2 -padx 10 -pady 5 -sticky e
     grid $inf.externalip -column 1 -row 2 -padx 0 -pady 5 -sticky e
@@ -1782,8 +1786,7 @@ proc frame-ipinfo {p} {
 proc frame-status {p} {
     set bg2 $::model::layout_bg2
     set stat [frame $p.stat -background $bg2]
-    # must use non-ttk label for proper animated gif display
-    label $stat.imagestatus -background $bg2
+    ttk::label $stat.imagestatus -background $bg2
     ttk::label $stat.status -text "" -background $bg2
     ttk::label $stat.flag -background $bg2
     img place 64/flag/EMPTY $stat.flag
@@ -1868,7 +1871,7 @@ proc ProfileTabChanged {nb} {
 
 # create a composite frame widget tvs (treeview scrolled) and return the name of the actual treeview child
 proc treeview-scrolled {tvs args} {
-    frame $tvs
+    ttk::frame $tvs
     set tree $tvs.tree
     set scrollbar $tvs.scrollbar
     ttk::treeview $tree {*}$args -yscrollcommand [list $scrollbar set]
@@ -1939,7 +1942,7 @@ proc current-profile {} {
 
 # return profile frame window
 proc frame-profile {p pname} {
-    set f [frame $p.$pname]
+    set f [ttk::frame $p.$pname]
     grid columnconfigure $f 0 -weight 1
     # TODO here dispatch to different dashboard views
     #frame-usage-meter $f
@@ -2164,13 +2167,13 @@ proc OptionsClicked {} {
         # About tab
         #
         ttk::frame $nb.about
-        label $nb.about.desc -text "Fruho - Universal VPN client" -font [dynafont -weight bold]
-        label $nb.about.userid1 -text "User ID:"
-        label $nb.about.userid2 -text $::model::Cn
-        label $nb.about.buildver1 -text "Program version:"
-        label $nb.about.buildver2 -text [build-version]
-        label $nb.about.builddate1 -text "Build date:"
-        label $nb.about.builddate2 -text [build-date]
+        ttk::label $nb.about.desc -text "Fruho - Universal VPN client" -font [dynafont -weight bold]
+        ttk::label $nb.about.userid1 -text "User ID:"
+        ttk::label $nb.about.userid2 -text $::model::Cn
+        ttk::label $nb.about.buildver1 -text "Program version:"
+        ttk::label $nb.about.buildver2 -text [build-version]
+        ttk::label $nb.about.builddate1 -text "Build date:"
+        ttk::label $nb.about.builddate2 -text [build-date]
     
         # this widget needs to have unique id which is passed through button events to status update label
         set update_id [rand-big]
@@ -2179,7 +2182,7 @@ proc OptionsClicked {} {
         button $nb.about.checkforupdates -text "Check for updates" -command [list CheckForUpdatesClicked $uframe]
     
         ttk::frame $uframe
-        label $uframe.status -compound left
+        ttk::label $uframe.status -compound left
         button $uframe.button -text "Update now" -command [list UpdateNowClicked $uframe]
         #hyperlink $nb.about.website -command [list launchBrowser "https://fruho.com"] -text "Copyright \u00A9 fruho.com"
         grid $nb.about.desc -row 0 -padx 10 -pady 5 -columnspan 2
@@ -2203,15 +2206,15 @@ proc OptionsClicked {} {
         #####################################################
         # Connection tab
         #
-        frame $nb.connection
-        label $nb.connection.info -text "OpenVPN connection protocol and port preference" -anchor w
+        ttk::frame $nb.connection
+        ttk::label $nb.connection.info -text "OpenVPN connection protocol and port preference" -anchor w
 
         # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
         set pplframe $nb.connection.pplframe
         set ppl [treeview-scrolled $pplframe -columns protoport -selectmode browse -show tree]
 
         bind $ppl <<TreeviewSelect>> [list options-connection-tab-update $ppl]
-        frame $nb.connection.buttons
+        ttk::frame $nb.connection.buttons
     
         button $nb.connection.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $ppl]
         button $nb.connection.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $ppl]
@@ -2219,14 +2222,24 @@ proc OptionsClicked {} {
         grid $nb.connection.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.connection.buttons.down -row 1 -sticky nwe -pady {0 10}
 
-        frame $nb.connection.timeout
-        label $nb.connection.timeout.lbl -text "Connection timeout \[sec\]" -anchor w
         set ::model::Gui_openvpn_connection_timeout $::model::openvpn_connection_timeout
-        scale $nb.connection.timeout.scale -orient horizontal -from 5 -to 40 -tickinterval 10 -resolution 5 -variable ::model::Gui_openvpn_connection_timeout
-        grid $nb.connection.timeout.lbl -row 0 -column 0 -sticky news -padx 10 
-        grid $nb.connection.timeout.scale -row 0 -column 1 -sticky news -padx 10
-        grid columnconfigure $nb.connection.timeout 0 -weight 1
-        grid columnconfigure $nb.connection.timeout 1 -weight 3
+        set scale_from 5
+        set scale_to 40
+        ttk::frame $nb.connection.timeout
+        ttk::label $nb.connection.timeout.lbl 
+        ttk::label $nb.connection.timeout.from -text $scale_from -anchor e
+        ttk::label $nb.connection.timeout.to -text $scale_to -anchor w
+        #scale $nb.connection.timeout.scale -orient horizontal -from $scale_from -to $scale_to -tickinterval 10 -resolution 5 -variable ::model::Gui_openvpn_connection_timeout
+        ttk::scale $nb.connection.timeout.scale -orient horizontal -from $scale_from -to $scale_to -variable ::model::Gui_openvpn_connection_timeout -command [list OptionsTimeoutUpdate $nb.connection.timeout.lbl]
+        grid $nb.connection.timeout.lbl -row 0 -column 0 -sticky news -padx 10 -pady 10 
+        grid $nb.connection.timeout.from -row 0 -column 1 -sticky news -pady 10 
+        grid $nb.connection.timeout.scale -row 0 -column 2 -sticky news -padx 10 -pady 10
+        grid $nb.connection.timeout.to -row 0 -column 3 -sticky news -pady 10 
+        grid columnconfigure $nb.connection.timeout 0
+        grid columnconfigure $nb.connection.timeout 1
+        grid columnconfigure $nb.connection.timeout 2 -weight 3
+        grid columnconfigure $nb.connection.timeout 3
+        OptionsTimeoutUpdate $nb.connection.timeout.lbl
     
         $ppl column #0 -width 30 -anchor w -stretch 0
         $ppl column 0 -width 100 -anchor w
@@ -2238,7 +2251,7 @@ proc OptionsClicked {} {
         $ppl selection set [lindex [$ppl children {}] 0]
         $ppl focus [lindex [$ppl children {}] 0]
 
-        frame $nb.connection.panel
+        ttk::frame $nb.connection.panel
     
         grid $nb.connection.info -columnspan 3 -padx 10 -pady {10 0} -sticky news
         grid $pplframe -row 3 -column 0 -sticky news -padx 10 -pady 10
@@ -2253,20 +2266,20 @@ proc OptionsClicked {} {
         #####################################################
         # Profiles tab
         #
-        frame $nb.profs
-        label $nb.profs.info -text "Active profiles" -anchor w
+        ttk::frame $nb.profs
+        ttk::label $nb.profs.info -text "Active profiles" -anchor w
         
         # this is a composite frame widget, the actual treeview will be returned by treeview-scrolled
         set proflframe $nb.profs.profl
         set profl [treeview-scrolled $proflframe -columns profilename -selectmode browse -show tree]
         bind $profl <<TreeviewSelect>> [list options-profile-tab-update $profl]
-        frame $nb.profs.buttons
+        ttk::frame $nb.profs.buttons
     
         button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
         button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
         button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
         button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl $nb.profs]
-        label $nb.profs.statusline -compound left -text " "
+        ttk::label $nb.profs.statusline -compound left -text " "
         img place 16/empty $nb.profs.statusline
     
         grid $nb.profs.buttons.up -row 0 -sticky nwe -pady {0 10}
@@ -2285,7 +2298,7 @@ proc OptionsClicked {} {
         $profl selection set [lindex [$profl children {}] 0]
         $profl focus [lindex [$profl children {}] 0]
 
-        frame $nb.profs.panel
+        ttk::frame $nb.profs.panel
     
         grid $nb.profs.info -columnspan 3 -padx 10 -pady {10 0} -sticky news
         grid $proflframe -row 3 -column 0 -sticky news -padx 10 -pady 10
@@ -2308,7 +2321,7 @@ proc OptionsClicked {} {
         grid $nb -sticky news -padx 10 -pady 10 
     
         set wb $w.buttons
-        frame $wb
+        ttk::frame $wb
         button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
         button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
         grid $wb -sticky news
@@ -2367,6 +2380,16 @@ proc OptionsClicked {} {
         puts stderr [log $e1 $e2]
     }
 }
+
+
+# callback setting options connection timeout from scale/slider
+proc OptionsTimeoutUpdate {lbl {val ""}} {
+    if {$val ne ""} {
+        set ::model::Gui_openvpn_connection_timeout [expr {round($val/5) * 5}]
+    }
+    $lbl configure -text "Connection timeout:  $::model::Gui_openvpn_connection_timeout seconds" -anchor w -width 30
+}
+
 
 proc OptionsTabChanged {ppl profl} {
     options-connection-tab-update $ppl
@@ -3104,11 +3127,11 @@ proc ClickConnect {} {
                 toplevel $w
                 
                 set wf $w.fields
-                frame $wf
-                label $wf.userlabel -text "Username" -anchor e
+                ttk::frame $wf
+                ttk::label $wf.userlabel -text "Username" -anchor e
                 set ::model::Gui_auth_user ""
                 entry $wf.userentry -textvariable ::model::Gui_auth_user
-                label $wf.passlabel -text "Password" -anchor e
+                ttk::label $wf.passlabel -text "Password" -anchor e
                 set ::model::Gui_auth_pass ""
                 entry $wf.passentry -textvariable ::model::Gui_auth_pass
                 grid $wf.userlabel -row 5 -column 0 -sticky e -padx 10 -pady {10 5}
@@ -3123,7 +3146,7 @@ proc ClickConnect {} {
                 grid rowconfigure $w 0 -weight 1
 
                 set wb $w.buttons
-                frame $wb
+                ttk::frame $wb
                 button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
                 button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
                 grid $wb -sticky news
