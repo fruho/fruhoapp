@@ -1427,12 +1427,10 @@ proc gui-update {} {
         img place 64/flag/[connect-flag-stand] .c.stat.flag 64/flag/EMPTY
         set externalip [externalip-stand]
         if {$externalip eq ""} {
-            # -compound center = display both text and image
-            .c.inf.externalip configure -text "                  " -compound center
+            .c.inf.externalip configure -text "                  "
             img place 16/spin .c.inf.externalip
         } else {
-            # -compound text = display only text
-            .c.inf.externalip configure -text $externalip -compound text
+            .c.inf.externalip configure -text $externalip
             img place 16/empty .c.inf.externalip
         }
         .c.bs.connect configure -state [connect-button-stand]

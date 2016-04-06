@@ -44,6 +44,9 @@
 namespace eval anigif {
 
   proc anigif2 {w list delay {idx 0}} {
+    if { ! [set ::anigif::${w}(animate)] } {
+        return
+    }
     if { ![winfo exists $w] } {
 #Cleanup
 #???
@@ -152,6 +155,9 @@ namespace eval anigif {
           break
         }
     }
+    # fruho: for some reason doing "after cancel" does not work every time 
+    # so we need another flag to start and stop animation
+    set ::anigif::${w}(animate) 1
     set ::anigif::${w}(repeat) $repeat
     set ::anigif::${w}(delay) $delay
     set ::anigif::${w}(disposal) $disposal
@@ -164,11 +170,11 @@ namespace eval anigif {
   }
 
   proc stop {w} {
-    catch {
-      [set ::anigif::${w}(curimage)] blank
-      $w configure -image [set ::anigif::${w}(curimage)]
-      after cancel [set ::anigif::${w}(loop)]
-    }
+    set ::anigif::${w}(animate) 0
+#    catch { [set ::anigif::${w}(curimage)] blank }
+#    catch { $w configure -image [set ::anigif::${w}(curimage)] }
+#    catch {puts stderr "cancelling $w : [set ::anigif::${w}(loop)]" }
+    catch { after cancel [set ::anigif::${w}(loop)] }
   }
 
   proc restart {w {idx -1}} {

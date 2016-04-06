@@ -5,8 +5,6 @@ package require anigif
 namespace eval ::img {
     namespace export *
     namespace ensemble create
-    # we keep a map lbl => img to prevent overwriting anigifs on unecessary img place
-    variable anigif_lbl2img [dict create]
 }
 
 
@@ -53,41 +51,38 @@ proc ::img::exists {imgptr} {
     return [file exists ${imgpath}${ext}]
 }
 
+proc ::img::name {imgptr} {
+    #TODO check if replacing / with \ is necessary on windows
+    return [string map {/ _} $imgptr]
+}
 
 # Create image object in the context of the caller and return its name
 # e.g. ::img::load flag/pl will look for images/flag/pl.png or images/flag/pl.gif 
 # and will load image under the name flag_pl and return that name
 proc ::img::load {imgptr} {
     memoize
-    set imgobj [string map {/ _} $imgptr]
-    #TODO check if replacing / with \ is necessary on windows
-    uplevel [list image create photo $imgobj -file [::img::path $imgptr]]
-    return $imgobj
+    set imgname [::img::name $imgptr]
+    uplevel [list image create photo $imgname -file [::img::path $imgptr]]
+    return $imgname
 }
 
 
-# we keep a map lbl => img:
-# - do nothing when trying to place already placed image on the same label
 proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
-    variable anigif_lbl2img
+    if { ![winfo exists $lbl] } {
+        return
+    }
     if {![::img::exists $imgptr]} {
         set imgptr $imgptr_default
     }
-    # sort of caching to prevent anigifs flickering when unnecessarily updated 
-    if {[dict exists $anigif_lbl2img $lbl]} {
-        if {[dict get $anigif_lbl2img $lbl] eq $imgptr} {
-            # do nothing if that image is already on that lbl
-            return
-        } else {
-            # must be a different image so clear cache
-            dict unset anigif_lbl2img $lbl
-        }
+    # prevent anigifs flickering when unnecessarily updated 
+    # do nothing when trying to place already placed image on the same label
+    if {[$lbl cget -image] eq [::img::name $imgptr]} {
+        return
     }
     anigif::stop $lbl
     if {[::img::ext $imgptr] eq ".gif"} {
         # can use both label and ttk::label now (after fixing anigif)
         anigif::anigif [::img::path $imgptr] $lbl
-        dict set anigif_lbl2img $lbl $imgptr
     } else {
         $lbl configure -image [::img::load $imgptr]
     }
