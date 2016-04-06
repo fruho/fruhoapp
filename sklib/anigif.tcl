@@ -78,6 +78,8 @@ namespace eval anigif {
         default { puts "no match: $dispflag" }
       }
       [set ::anigif::${w}(curimage)] copy [lindex $list $idx] -subsample 2 2
+      # fruho fix: need to reassign image to widget to make it work for ttk::label
+      $w configure -image [set ::anigif::${w}(curimage)]
       if { [lindex $delay $idx] == 0 } {
         ::anigif::stop $w
         return
@@ -163,6 +165,8 @@ namespace eval anigif {
 
   proc stop {w} {
     catch {
+      [set ::anigif::${w}(curimage)] blank
+      $w configure -image [set ::anigif::${w}(curimage)]
       after cancel [set ::anigif::${w}(loop)]
     }
   }

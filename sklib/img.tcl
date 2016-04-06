@@ -85,13 +85,9 @@ proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
     }
     anigif::stop $lbl
     if {[::img::ext $imgptr] eq ".gif"} {
-        # must use non-ttk label $lbl for proper animated gif display
-        if {[winfo class $lbl] eq "Label"} {
-            anigif::anigif [::img::path $imgptr] $lbl
-            dict set anigif_lbl2img $lbl $imgptr
-        } else {
-            error "img::place: You should use plain label (not ttk::label) to display animated gif"
-        }
+        # can use both label and ttk::label now (after fixing anigif)
+        anigif::anigif [::img::path $imgptr] $lbl
+        dict set anigif_lbl2img $lbl $imgptr
     } else {
         $lbl configure -image [::img::load $imgptr]
     }
