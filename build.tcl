@@ -245,14 +245,14 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.20
+set ::FRUHO_VERSION 0.0.21
 prepare-lib sklib 0.0.0
 
 #build linux x86_64 sample base-tk-[base-ver x86_64] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 
-build-total
+#build-total
 #build-total ix86
-#build-total x86_64
+build-total x86_64
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
