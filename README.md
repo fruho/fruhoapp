@@ -2,7 +2,7 @@
 
 ### What is Fruho?
 
-Fruho is an open-source, zero-configuration, VPN client software for Linux. It supports automatic setup and allows importing configurations from VPN services and connecting to your own VPN server.
+Fruho is an open-source, zero-configuration, VPN client software for Linux. It supports automatic setup and allows importing configurations from VPN services and connecting to your own VPN server. Visit https://fruho.com for more details.
 
 &nbsp;
 
