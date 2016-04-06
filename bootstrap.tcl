@@ -93,9 +93,13 @@ proc install-fpm {} {
         set pkgmgr [find-pkg-mgr]
         if {$pkgmgr eq "apt-get"} {
             ex sudo apt-get update --fix-missing
-            ex sudo apt-get -fy install git ruby-full ruby-dev gcc rpm make
+            ex sudo apt-get -fy install git gcc rpm make
+            # this should remove ruby 1.8 - there is a bug in ruby 1.8 that makes fpm fail for deb packages
+            ex sudo apt-get -fy remove ruby-full
+            ex sudo apt-get -fy install ruby1.9.1-full
+            ex sudo apt-get -fy install ruby-dev
             catch {ex sudo apt-get -fy install rubygems}
-            ex sudo apt-get -fy install rubygems-integration
+            catch {ex sudo apt-get -fy install rubygems-integration}
         } elseif {$pkgmgr eq "zypper"} {
             ex sudo zypper --non-interactive install ruby-devel gcc make rpm-build
         } elseif {$pkgmgr eq "yum"} {
