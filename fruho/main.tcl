@@ -1727,15 +1727,15 @@ proc frame-usage-meter {p} {
     ttk::label $um.usedlabel -textvariable ::model::Gui_usedlabel -background $bg1 -width 15
     set barw $::model::layout_barw
     set barh $::model::layout_barh
-    ttk::frame $um.usedbar -background $bg3 -width $barw -height $barh
-    ttk::frame $um.usedbar.fill -background $fgused -width 0 -height $barh
+    frame $um.usedbar -background $bg3 -width $barw -height $barh
+    frame $um.usedbar.fill -background $fgused -width 0 -height $barh
     place $um.usedbar.fill -x 0 -y 0
     grid columnconfigure $um.usedbar 0 -weight 1
     #ttk::label $um.usedsummary -text "12.4 GB / 50 GB" -background $bg1
     ttk::label $um.usedsummary -textvariable ::model::Gui_usedsummary -background $bg1 -width 15
     ttk::label $um.elapsedlabel -textvariable ::model::Gui_elapsedlabel -background $bg1 -width 15
-    ttk::frame $um.elapsedbar -background $bg3 -width $barw -height $barh
-    ttk::frame $um.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
+    frame $um.elapsedbar -background $bg3 -width $barw -height $barh
+    frame $um.elapsedbar.fill -background $fgelapsed -width 0 -height $barh
     place $um.elapsedbar.fill -x 0 -y 0
     #ttk::label $um.elapsedsummary -text "3 days 14 hours / 31 days" -background $bg1
     ttk::label $um.elapsedsummary -textvariable ::model::Gui_elapsedsummary -background $bg1 -width 15
@@ -1750,11 +1750,8 @@ proc frame-usage-meter {p} {
 proc frame-toolbar {p} {
     set tb [ttk::frame $p.tb -borderwidth 0 -relief raised]
     hypertext $tb.improve "Help improve this program. Provide your <https://fruho.com/contact><feedback.> We listen."
-    button $tb.options -relief flat -command OptionsClicked
-    #TODO convert to consistent ttk or plain theme
-    #ttk::style configure TStyleFlat -relief flat
-    #ttk::button $tb.options -style TStyleFlat -command OptionsClicked
-    #ttk::button $tb.options -command OptionsClicked
+    ttk::style configure Flat.TButton -relief flat
+    ttk::button $tb.options -style Flat.TButton -command OptionsClicked
     img place 24/options  $tb.options
     ttk::label $tb.bang
     img place 16/bang $tb.bang
@@ -1800,9 +1797,10 @@ proc frame-status {p} {
 
 proc frame-buttons {p} {
     set bs [ttk::frame $p.bs]
-    button $bs.connect -font [dynafont -size 12] -compound left -image [img load 24/connect] -text [_ "Connect"] -command [list go ClickConnect] ;# _2eaf8d491417924c
-    button $bs.disconnect -font [dynafont -size 12] -compound left -image [img load 24/disconnect] -text [_ "Disconnect"] -command [list go ClickDisconnect] ;# _87fff3af45753920
-    button $bs.slist -font [dynafont -size 12] -compound left -image [img load 24/servers] -text [_ "Servers"] -command ServerListClicked ;# _bf9c42ec59d68714
+    ttk::style configure Big.TButton -font [dynafont -size 12]
+    ttk::button $bs.connect -style Big.TButton -compound left -image [img load 24/connect] -text [_ "Connect"] -command [list go ClickConnect] ;# _2eaf8d491417924c
+    ttk::button $bs.disconnect -style Big.TButton -compound left -image [img load 24/disconnect] -text [_ "Disconnect"] -command [list go ClickDisconnect] ;# _87fff3af45753920
+    ttk::button $bs.slist -style Big.TButton -compound left -image [img load 24/servers] -text [_ "Servers"] -command ServerListClicked ;# _bf9c42ec59d68714
     grid $bs.connect -row 0 -column 0 -padx 10 -sticky w
     grid $bs.disconnect -row 0 -column 1 -padx 10 -sticky w
     grid $bs.slist -row 0 -column 2 -padx 10 -sticky e
@@ -2179,11 +2177,11 @@ proc OptionsClicked {} {
         set update_id [rand-big]
         set uframe $nb.about.updateframe$update_id
     
-        button $nb.about.checkforupdates -text "Check for updates" -command [list CheckForUpdatesClicked $uframe]
+        ttk::button $nb.about.checkforupdates -text "Check for updates" -command [list CheckForUpdatesClicked $uframe]
     
         ttk::frame $uframe
         ttk::label $uframe.status -compound left
-        button $uframe.button -text "Update now" -command [list UpdateNowClicked $uframe]
+        ttk::button $uframe.button -text "Update now" -command [list UpdateNowClicked $uframe]
         #hyperlink $nb.about.website -command [list launchBrowser "https://fruho.com"] -text "Copyright \u00A9 fruho.com"
         grid $nb.about.desc -row 0 -padx 10 -pady 5 -columnspan 2
         grid $nb.about.userid1 -row 1 -column 0 -sticky w -padx 10 -pady 5
@@ -2216,8 +2214,10 @@ proc OptionsClicked {} {
         bind $ppl <<TreeviewSelect>> [list options-connection-tab-update $ppl]
         ttk::frame $nb.connection.buttons
     
-        button $nb.connection.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $ppl]
-        button $nb.connection.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $ppl]
+        #ttk::button $nb.connection.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $ppl]
+        ttk::button $nb.connection.buttons.up -text "Move Up" -command [list TreeItemMove up $ppl]
+        #ttk::button $nb.connection.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $ppl]
+        ttk::button $nb.connection.buttons.down -text "Move Down" -command [list TreeItemMove down $ppl]
     
         grid $nb.connection.buttons.up -row 0 -sticky nwe -pady {0 10}
         grid $nb.connection.buttons.down -row 1 -sticky nwe -pady {0 10}
@@ -2275,10 +2275,14 @@ proc OptionsClicked {} {
         bind $profl <<TreeviewSelect>> [list options-profile-tab-update $profl]
         ttk::frame $nb.profs.buttons
     
-        button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
-        button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
-        button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
-        button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl $nb.profs]
+        #ttk::button $nb.profs.buttons.up -text "Move Up" -anchor w -command [list TreeItemMove up $profl]
+        ttk::button $nb.profs.buttons.up -text "Move Up" -command [list TreeItemMove up $profl]
+        #ttk::button $nb.profs.buttons.down -text "Move Down" -anchor w -command [list TreeItemMove down $profl]
+        ttk::button $nb.profs.buttons.down -text "Move Down" -command [list TreeItemMove down $profl]
+        #ttk::button $nb.profs.buttons.delete -text "Delete" -anchor w -command [list ProfileDelete $profl]
+        ttk::button $nb.profs.buttons.delete -text "Delete" -command [list ProfileDelete $profl]
+        #ttk::button $nb.profs.buttons.updateplan -text "Update Plan" -anchor w -command [list go ProfileUpdatePlan $profl $nb.profs]
+        ttk::button $nb.profs.buttons.updateplan -text "Update Plan" -command [list go ProfileUpdatePlan $profl $nb.profs]
         ttk::label $nb.profs.statusline -compound left -text " "
         img place 16/empty $nb.profs.statusline
     
@@ -2322,8 +2326,8 @@ proc OptionsClicked {} {
     
         set wb $w.buttons
         ttk::frame $wb
-        button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
-        button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
+        ttk::button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
+        ttk::button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
         grid $wb -sticky news
         grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
         grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e
@@ -2610,8 +2614,8 @@ proc ServerListClicked {} {
         set wb $w.buttons
         ttk::frame $wb
         # width may be in pixels or in chars depending on presence of the image
-        button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
-        button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
+        ttk::button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
+        ttk::button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
         grid $wb -sticky news
         grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
         grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e
@@ -3147,8 +3151,8 @@ proc ClickConnect {} {
 
                 set wb $w.buttons
                 ttk::frame $wb
-                button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
-                button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
+                ttk::button $wb.cancel -text Cancel -width 10 -command [list set ::Modal.Result cancel]
+                ttk::button $wb.ok -text OK -width 10 -command [list set ::Modal.Result ok]
                 grid $wb -sticky news
                 grid $wb.cancel -row 5 -column 0 -padx {30 5} -pady 5 -sticky w
                 grid $wb.ok -row 5 -column 1 -padx {5 30} -pady 5 -sticky e

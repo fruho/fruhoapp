@@ -252,7 +252,10 @@ prepare-lib sklib 0.0.0
 
 #build-total
 #build-total ix86
-build-total x86_64
+#build-total x86_64
+
+build-fruho linux x86_64
+
 #package require i18n
 #i18n code2msg ./fruho/main.tcl {es pl} ./fruho/messages.txt 
 
