@@ -120,8 +120,7 @@ namespace eval ::model {
     variable openvpn_connection_timeout 25
     variable Gui_openvpn_connection_autoreconnect 1
     variable openvpn_connection_autoreconnect 1
-    variable Gui_openvpn_connection_reconnect_delay 2
-    variable Gui_openvpn_connection_reconnect_delay_max 60
+    variable Gui_openvpn_connection_reconnect_delay 3
 
     # flag indicating whether user disconnected manually - relevant for autoreconnect
     variable user_disconnected 0

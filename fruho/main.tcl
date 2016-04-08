@@ -3248,7 +3248,7 @@ proc connstatus-loop {} {
                     <- $::model::Chan_button_disconnect
                     set ::model::user_disconnected 1
                     set ::model::is_reconnecting 0
-                    set ::model::Gui_openvpn_connection_reconnect_delay 2
+                    set ::model::Gui_openvpn_connection_reconnect_delay 3
                     connection-windup
                     trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
                     model connstatus cancelled
@@ -3291,29 +3291,13 @@ proc connstatus-loop {} {
                     model connstatus failed
                     # cancel the timeout
                     set chtimeout $empty_channel
-                    connection-windup
-                    if {[should-reconnect]} {
-                        timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
-                        set ::model::Gui_openvpn_connection_reconnect_delay [expr {2 * $::model::Gui_openvpn_connection_reconnect_delay}]
-                        set ::model::is_reconnecting 1
-                    } else {
-                        trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
-                    }
-                    gui-update
+                    on-conn-fail-or-timeout chreconnect
                     mainstatusline-update $stat
                 }
                 <- $chtimeout {
                     <- $chtimeout
                     model connstatus timeout
-                    connection-windup
-                    if {[should-reconnect]} {
-                        timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
-                        set ::model::Gui_openvpn_connection_reconnect_delay [expr {2 * $::model::Gui_openvpn_connection_reconnect_delay}]
-                        set ::model::is_reconnecting 1
-                    } else {
-                        trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
-                    }
-                    gui-update
+                    on-conn-fail-or-timeout chreconnect
                 }
                 <- $chreconnect {
                     <- $chreconnect
@@ -3325,6 +3309,20 @@ proc connstatus-loop {} {
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
+}
+
+
+proc on-conn-fail-or-timeout {timervar} {
+    upvar chreconnect $timervar
+    connection-windup
+    if {[should-reconnect]} {
+        timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
+        set ::model::Gui_openvpn_connection_reconnect_delay [expr {min(120, 2 * $::model::Gui_openvpn_connection_reconnect_delay)}]
+        set ::model::is_reconnecting 1
+    } else {
+        trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
+    }
+    gui-update
 }
 
 
