@@ -82,7 +82,7 @@ proc ::img::place {imgptr lbl {imgptr_default 16/missing}} {
     anigif::stop $lbl
     if {[::img::ext $imgptr] eq ".gif"} {
         # can use both label and ttk::label now (after fixing anigif)
-        anigif::anigif [::img::path $imgptr] $lbl
+        anigif::anigif [::img::path $imgptr] $lbl 0 [::img::load $imgptr]
     } else {
         $lbl configure -image [::img::load $imgptr]
     }

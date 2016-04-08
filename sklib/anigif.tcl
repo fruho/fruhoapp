@@ -94,7 +94,7 @@ namespace eval anigif {
     }
   }
 
-  proc anigif {fnam w {idx 0}} {
+  proc anigif {fnam w {idx 0} {imgname ""}} {
     set n 0
     set images {}
     set delay {}
@@ -161,7 +161,12 @@ namespace eval anigif {
     set ::anigif::${w}(repeat) $repeat
     set ::anigif::${w}(delay) $delay
     set ::anigif::${w}(disposal) $disposal
-    set ::anigif::${w}(curimage) [image create photo]
+
+    if {$imgname eq ""} {
+        set imgname [image create photo]
+    }
+    set ::anigif::${w}(curimage) $imgname
+
     [set ::anigif::${w}(curimage)] blank
     [set ::anigif::${w}(curimage)] copy pic0${w} -subsample 2 2
     $w configure -image [set ::anigif::${w}(curimage)]
