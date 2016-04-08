@@ -1284,10 +1284,10 @@ proc connecting-profile {} {
     }
 }
 
-# actually "connecting" or "connected"
+# actually "connecting" or "connected" or is_reconnecting flag
 proc is-connecting-status {} {
     set status [model connstatus]
-    return [expr {$status eq "connected" || $status eq "connecting"}]
+    return [expr {$status eq "connected" || $status eq "connecting" || $::model::is_reconnecting}]
 }
 
 # stand is widget status calculated from the model
@@ -1304,6 +1304,9 @@ proc connect-button-stand {} {
     }
     set slist [current-slist [model now] [current-profile]]
     if {$slist eq ""} {
+        return disabled
+    }
+    if {$::model::is_reconnecting} {
         return disabled
     }
     set status [model connstatus]
@@ -1334,6 +1337,9 @@ proc disconnect-button-stand {} {
         if {[current-profile] eq "fruho" && ![is-cert-received [current-profile]]} {
             return disabled
         }
+    }
+    if {$::model::is_reconnecting} {
+        return normal
     }
     set status [model connstatus]
     switch $status {
@@ -1374,7 +1380,11 @@ proc connect-flag-stand {} {
 }
 
 proc connect-image-stand {} {
-    set status [model connstatus]
+    if {$::model::is_reconnecting} {
+        set status connecting
+    } else {
+        set status [model connstatus]
+    }
     return $status
 }
 
@@ -1382,28 +1392,38 @@ proc connect-msg-stand {} {
     set status [model connstatus]
     set city [dict-pop $::model::Current_sitem city ?]
     set ccode [dict-pop $::model::Current_sitem ccode ?]
-    switch $status {
-        unknown         {set msg [_ "Unknown"]}
-        disconnected    {set msg [_ "Disconnected"]}
-        timeout         {set msg [_ "Disconnected"]}
-        cancelled       {set msg [_ "Disconnected"]}
-        failed          {set msg [_ "Disconnected"]}
-        installing      {set msg [_ "Installing"]}
-        connecting      {
-            if {$city ne "" && $ccode ne ""} {
-                set msg [_ "Connecting to {0}, {1}" $city $ccode]
-            } else {
-                set msg [_ "Connecting"]
-            }
+    if {$status eq "unknown"} {
+        set msg [_ "Unknown"]
+    } elseif {$::model::is_reconnecting && $status ne "connected"} {
+        if {$city ne "" && $ccode ne ""} {
+            set msg [_ "Reconnecting to {0}, {1}" $city $ccode]
+        } else {
+            set msg [_ "Reconnecting"]
         }
-        connected       {
-            if {$city ne "" && $ccode ne ""} {
-                set msg [_ "Connected to {0}, {1}" $city $ccode]
-            } else {
-                set msg [_ "Connected"]
+    } else {
+        switch $status {
+            unknown         {set msg [_ "Unknown"]}
+            disconnected    {set msg [_ "Disconnected"]}
+            timeout         {set msg [_ "Disconnected"]}
+            cancelled       {set msg [_ "Disconnected"]}
+            failed          {set msg [_ "Disconnected"]}
+            installing      {set msg [_ "Installing"]}
+            connecting      {
+                if {$city ne "" && $ccode ne ""} {
+                    set msg [_ "Connecting to {0}, {1}" $city $ccode]
+                } else {
+                    set msg [_ "Connecting"]
+                }
             }
+            connected       {
+                if {$city ne "" && $ccode ne ""} {
+                    set msg [_ "Connected to {0}, {1}" $city $ccode]
+                } else {
+                    set msg [_ "Connected"]
+                }
+            }
+            default         {set msg [_ "Unknown"]}
         }
-        default         {set msg [_ "Unknown"]}
     }
     return $msg
 }
@@ -1657,10 +1677,11 @@ proc dash-gauge-update {} {
     set profileid [current-profile]
     set db .c.tabsetenvelope.nb.$profileid.db
 
-    switch [model connstatus] {
-        connected {set gaugestate normal}
-        connecting {set gaugestate normal}
-        default {set gaugestate disabled}
+
+    if {[is-connecting-status]} {
+        set gaugestate normal
+    } else {
+        set gaugestate disabled
     }
 
     if {[winfo exists $db]} {
@@ -3207,25 +3228,39 @@ proc ClickConnect {} {
     }
 }
 
+
+proc should-reconnect {} {
+    return [expr {$::model::openvpn_connection_autoreconnect && ! $::model::user_disconnected}]
+}
+
+
 # coroutine that monitors various channels to set proper connstatus (to be displayed)
 proc connstatus-loop {} {
     try {
         channel empty_channel
         set chtimeout $empty_channel
+        set chreconnect $empty_channel
         while 1 {
             # TODO possibly one more source of events here: openvpn logs
             select {
                 <- $::model::Chan_button_disconnect {
                     # this is really cancelled status
                     <- $::model::Chan_button_disconnect
+                    set ::model::user_disconnected 1
+                    set ::model::is_reconnecting 0
+                    set ::model::Gui_openvpn_connection_reconnect_delay 2
                     connection-windup
+                    trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
                     model connstatus cancelled
-                    # this cancels the timeout
+                    # cancel the timeout
                     set chtimeout $empty_channel
+                    set chreconnect $empty_channel
                     gui-update
                 }
                 <- $::model::Chan_button_connect {
                     <- $::model::Chan_button_connect
+                    set ::model::user_disconnected 0
+                    set ::model::is_reconnecting 0
                     model connstatus connecting
                     timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
                     gui-update
@@ -3240,9 +3275,10 @@ proc connstatus-loop {} {
                             log "newstatus: $newstatus"
                             model connstatus $newstatus
                             if {$newstatus eq "connected"} {
-                                trigger-geo-loc $::model::geo_loc_delay
-                                # this cancels the timeout
+                                trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
+                                # cancel the timeout
                                 set chtimeout $empty_channel
+                                set chreconnect $empty_channel
                             }
                             gui-update
                         }
@@ -3252,10 +3288,17 @@ proc connstatus-loop {} {
                 <- $::model::Chan_openvpn_fail {
                     set msg [<- $::model::Chan_openvpn_fail]
                     set ::model::Mainstatusline_last "Last connection failed. [string range $msg 0 70]"
-                    connection-windup
                     model connstatus failed
-                    # this cancels the timeout
+                    # cancel the timeout
                     set chtimeout $empty_channel
+                    connection-windup
+                    if {[should-reconnect]} {
+                        timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
+                        set ::model::Gui_openvpn_connection_reconnect_delay [expr {2 * $::model::Gui_openvpn_connection_reconnect_delay}]
+                        set ::model::is_reconnecting 1
+                    } else {
+                        trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
+                    }
                     gui-update
                     mainstatusline-update $stat
                 }
@@ -3263,7 +3306,19 @@ proc connstatus-loop {} {
                     <- $chtimeout
                     model connstatus timeout
                     connection-windup
+                    if {[should-reconnect]} {
+                        timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
+                        set ::model::Gui_openvpn_connection_reconnect_delay [expr {2 * $::model::Gui_openvpn_connection_reconnect_delay}]
+                        set ::model::is_reconnecting 1
+                    } else {
+                        trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
+                    }
                     gui-update
+                }
+                <- $chreconnect {
+                    <- $chreconnect
+                    ffwrite start
+                    timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
                 }
             }
         }
@@ -3296,7 +3351,6 @@ proc connection-windup {} {
     set ::model::Previous_totalup {}
     set ::model::Previous_totaldown {}
     set ::model::Previous_total_tstamp {}
-    trigger-geo-loc $::model::geo_loc_delay
     ffwrite stop
 }
 

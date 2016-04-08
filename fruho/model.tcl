@@ -91,7 +91,7 @@ namespace eval ::model {
     variable Geo_loc ""
 
     # delay in requesting /loc external IP info - must be adjustable by the user
-    variable geo_loc_delay 1000
+    variable geo_loc_delay 1
 
     variable Mainstatusline [dict create]
     variable Mainstatusline_spin empty
@@ -120,9 +120,13 @@ namespace eval ::model {
     variable openvpn_connection_timeout 25
     variable Gui_openvpn_connection_autoreconnect 1
     variable openvpn_connection_autoreconnect 1
+    variable Gui_openvpn_connection_reconnect_delay 2
+    variable Gui_openvpn_connection_reconnect_delay_max 60
 
     # flag indicating whether user disconnected manually - relevant for autoreconnect
     variable user_disconnected 0
+    # flag indicating whether this is first connect since clicking "Connect" or reconnect
+    variable is_reconnecting 0
 
     csp::channel ::model::Chan_button_connect
     csp::channel ::model::Chan_button_disconnect
