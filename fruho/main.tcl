@@ -1380,10 +1380,9 @@ proc connect-flag-stand {} {
 }
 
 proc connect-image-stand {} {
-    if {$::model::is_reconnecting} {
+    set status [model connstatus]
+    if {$status ne "connected" && $::model::is_reconnecting} {
         set status connecting
-    } else {
-        set status [model connstatus]
     }
     return $status
 }
