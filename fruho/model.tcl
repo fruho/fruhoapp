@@ -118,6 +118,11 @@ namespace eval ::model {
 
     variable Gui_openvpn_connection_timeout 25
     variable openvpn_connection_timeout 25
+    variable Gui_openvpn_connection_autoreconnect 1
+    variable openvpn_connection_autoreconnect 1
+
+    # flag indicating whether user disconnected manually - relevant for autoreconnect
+    variable user_disconnected 0
 
     csp::channel ::model::Chan_button_connect
     csp::channel ::model::Chan_button_disconnect

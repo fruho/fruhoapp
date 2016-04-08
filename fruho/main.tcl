@@ -2225,22 +2225,29 @@ proc OptionsClicked {} {
         set ::model::Gui_openvpn_connection_timeout $::model::openvpn_connection_timeout
         set scale_from 5
         set scale_to 40
-        ttk::frame $nb.connection.timeout
-        ttk::label $nb.connection.timeout.lbl 
-        ttk::label $nb.connection.timeout.from -text $scale_from -anchor e
-        ttk::label $nb.connection.timeout.to -text $scale_to -anchor w
-        #scale $nb.connection.timeout.scale -orient horizontal -from $scale_from -to $scale_to -tickinterval 10 -resolution 5 -variable ::model::Gui_openvpn_connection_timeout
-        ttk::scale $nb.connection.timeout.scale -orient horizontal -from $scale_from -to $scale_to -variable ::model::Gui_openvpn_connection_timeout -command [list OptionsTimeoutUpdate $nb.connection.timeout.lbl]
-        grid $nb.connection.timeout.lbl -row 0 -column 0 -sticky news -padx 10 -pady 10 
-        grid $nb.connection.timeout.from -row 0 -column 1 -sticky news -pady 10 
-        grid $nb.connection.timeout.scale -row 0 -column 2 -sticky news -padx 10 -pady 10
-        grid $nb.connection.timeout.to -row 0 -column 3 -sticky news -pady 10 
-        grid columnconfigure $nb.connection.timeout 0
-        grid columnconfigure $nb.connection.timeout 1
-        grid columnconfigure $nb.connection.timeout 2 -weight 3
-        grid columnconfigure $nb.connection.timeout 3
-        OptionsTimeoutUpdate $nb.connection.timeout.lbl
+        ttk::frame $nb.connection.options
+        ttk::label $nb.connection.options.timeoutlbl 
+        ttk::label $nb.connection.options.timeoutfrom -text $scale_from -anchor e
+        ttk::label $nb.connection.options.timeoutto -text $scale_to -anchor w
+        ttk::scale $nb.connection.options.timeoutscale -orient horizontal -from $scale_from -to $scale_to -variable ::model::Gui_openvpn_connection_timeout -command [list OptionsTimeoutUpdate $nb.connection.options.timeoutlbl]
+        grid $nb.connection.options.timeoutlbl -row 0 -column 0 -sticky news -padx 10 -pady 10 
+        grid $nb.connection.options.timeoutfrom -row 0 -column 1 -sticky news -pady 10 
+        grid $nb.connection.options.timeoutscale -row 0 -column 2 -sticky news -padx 10 -pady 10
+        grid $nb.connection.options.timeoutto -row 0 -column 3 -sticky news -pady 10 
+        grid columnconfigure $nb.connection.options 0
+        grid columnconfigure $nb.connection.options 1
+        grid columnconfigure $nb.connection.options 2 -weight 3
+        grid columnconfigure $nb.connection.options 3
+        OptionsTimeoutUpdate $nb.connection.options.timeoutlbl
     
+        set ::model::Gui_openvpn_connection_autoreconnect $::model::openvpn_connection_autoreconnect
+        ttk::label $nb.connection.options.reconnectlbl -text "Auto reconnect"
+        ttk::checkbutton $nb.connection.options.reconnectbox -variable ::model::Gui_openvpn_connection_autoreconnect
+        grid $nb.connection.options.reconnectlbl -row 2 -column 0  -sticky news -padx 10 -pady 10
+        grid $nb.connection.options.reconnectbox -row 2 -column 1 -columnspan 3 -sticky w -padx 20 -pady 10
+        
+
+
         $ppl column #0 -width 30 -anchor w -stretch 0
         $ppl column 0 -width 100 -anchor w
     
@@ -2257,8 +2264,9 @@ proc OptionsClicked {} {
         grid $pplframe -row 3 -column 0 -sticky news -padx 10 -pady 10
         grid $nb.connection.buttons -row 3 -column 1 -sticky nw -padx 10 -pady 10
         grid $nb.connection.panel -row 3 -column 2 -sticky news -padx 10 -pady 10
-        grid $nb.connection.timeout -row 5 -columnspan 3 -sticky news -padx 10 -pady {0 20}
-    
+
+        grid $nb.connection.options -row 5 -columnspan 3 -sticky news -padx 10 -pady {0 20}
+
         grid columnconfigure $nb.connection 2 -weight 1
     
         options-connection-tab-update $ppl
@@ -2378,6 +2386,7 @@ proc OptionsClicked {} {
 #               }
 #   
             set ::model::openvpn_connection_timeout $::model::Gui_openvpn_connection_timeout
+            set ::model::openvpn_connection_autoreconnect $::model::Gui_openvpn_connection_autoreconnect
         }
         destroy $w
     } on error {e1 e2} {
