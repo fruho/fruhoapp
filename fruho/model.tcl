@@ -279,7 +279,7 @@ proc ::model::load {} {
     if {[catch {
         ini2model [model INIFILE]
         ::model::load-bootstrap
-
+        
         # load profiles from individual directories and update model
         set profiles [lmap d [glob -directory [model PROFILEDIR] -nocomplain -type d *] {file tail $d}]
         # sanitize directory names
@@ -288,7 +288,7 @@ proc ::model::load {} {
                 fatal "Profile directory name should be alphanumeric string in [model PROFILEDIR]"
             }
         }
-
+        
         foreach p $profiles {
             set inifile [file join [model PROFILEDIR] $p config.ini]
             if {[file exists $inifile]} {
@@ -296,6 +296,14 @@ proc ::model::load {} {
             }
         }
         #puts stderr "MODEL PROFILES: \n[::inicfg::dict-pretty $::model::Profiles]"
+        
+        
+        # in case of upgrade to fruho v0.0.22 fix geo_loc_delay to convert from ms to seconds
+        if {$::model::geo_loc_delay > 100} {
+            set ::model::geo_loc_delay [expr {$::model::geo_loc_delay / 1000}]
+        } 
+
+
 
     } out err]} {
         puts stderr $out
