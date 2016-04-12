@@ -5,10 +5,11 @@ namespace eval ::airvpn {
 
     variable name airvpn
     variable dispname AirVPN
-    variable host bootstrap
-    variable port 10443
-    variable path_config /vpapi/airvpn/config
-    variable path_plans /vpapi/airvpn/plans
+# remote endpoint not used - all import local from zip file    
+#    variable host bootstrap
+#    variable port 10443
+#    variable path_config /vpapi/airvpn/config
+#    variable path_plans /vpapi/airvpn/plans
 
 
     # input entries - resettable/modifiable variables
