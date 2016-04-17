@@ -221,6 +221,7 @@ proc main {} {
             }
         }
     
+
         log [build-date]
         log [build-version]
         
@@ -232,10 +233,10 @@ proc main {} {
         set ::model::Running_binary_fingerprint [sha1sum [this-binary]]
     
         set ::model::Openvpnlog [open [model OPENVPNLOGFILE] w]
+
         in-ui main
         daemon-monitor
         go ffread-loop
-        plan-monitor
     } on error {e1 e2} {
         log $e1 $e2
     }
@@ -320,6 +321,8 @@ proc generate-cn {} {
 proc main-cli {} {
     log Running CLI
     #TODO
+    puts stderr [log "Under construction"]
+    main-exit
 }
 
 # height should be odd value
@@ -415,6 +418,7 @@ proc main-gui {} {
         go faas-config-monitor
         go connstatus-loop
         gui-update
+        plan-monitor
     } on error {e1 e2} {
         puts stderr [log $e1 $e2]
     }
@@ -457,7 +461,7 @@ proc mainstatusline-update {stat} {
     } elseif {$connstatus eq "unknown"} {
         set ::model::Mainstatusline [dict create]
         set ::model::Mainstatusline_link ""
-        set ::model::Mainstatusline_last "No connection to fruho daemon. Try to restart fruhod service."
+        set ::model::Mainstatusline_last "No connection to fruho daemon. Try to restart fruhod service (sudo /etc/init.d/fruhod restart)"
     } elseif {$connstatus eq "installing"} {
         set ::model::Mainstatusline [dict create]
         set ::model::Mainstatusline_spin spin
@@ -1441,6 +1445,9 @@ proc externalip-stand {} {
 # - for performance reasons
 # - to avoid gauge flickering - it should be updated at regular intervals
 proc gui-update {} {
+    if {$::model::Ui ne "gui"} {
+        return
+    }
     try {
         img place 32/status/[connect-image-stand] .c.stat.imagestatus
         img place 64/flag/[connect-flag-stand] .c.stat.flag 64/flag/EMPTY
@@ -2886,14 +2893,17 @@ proc daemon-monitor {} {
 
 
 proc daemon-connect {port} {
-    #TODO handle error
-    if {[catch {set sock [socket -async 127.0.0.1 $port]} out err] == 1} {
-        ffconn-close
-        return
+    try {
+        if {[catch {set sock [socket -async 127.0.0.1 $port]} out err] == 1} {
+            ffconn-close
+            return
+        }
+        set ::model::Ffconn_sock $sock
+        chan configure $sock -blocking 0 -buffering line
+        chan event $sock readable ffread
+    } on error {e1 e2} {
+        puts stderr [log $e1 $e2]
     }
-    set ::model::Ffconn_sock $sock
-    chan configure $sock -blocking 0 -buffering line
-    chan event $sock readable ffread
 }
 
 
@@ -2923,7 +2933,13 @@ proc ffread {} {
             csp::SetResume
         }
     } on error {e1 e2} {
-        puts stderr [log $e1 $e2]
+        # most likely socket not connected
+        ffconn-close
+        if {[string match "*socket is not connected*" $e1]} {
+            log "Ffconn_sock socket is not connected"
+        } else {
+            puts stderr [log $e1 $e2]
+        }
     }
 }
 

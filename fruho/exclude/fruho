@@ -1,2 +1,6 @@
 #!/bin/sh
-exec /usr/local/bin/fruho.bin "$@" &
+if [ $# -eq 0 ]; then
+    exec /usr/local/bin/fruho.bin "$@" &
+else
+    exec /usr/local/bin/fruho.bin "$@"
+fi
