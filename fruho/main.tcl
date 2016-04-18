@@ -2998,6 +2998,9 @@ proc ffread-loop {} {
                             dict-set-trim ::model::Profiles $profile cache_custom_auth_pass ""
                             $::model::Chan_openvpn_fail <- "AUTH_FAILED Wrong username/password"
                         }
+                        {Inactivity timeout.*restarting} {
+                            $::model::Chan_openvpn_fail <- "Inactivity timeout"
+                        }
                     }
                 }
                 {^stat: (.*)$} {
@@ -3252,9 +3255,10 @@ proc should-reconnect {} {
 # coroutine that monitors various channels to set proper connstatus (to be displayed)
 proc connstatus-loop {} {
     try {
-        channel empty_channel
-        set chtimeout $empty_channel
-        set chreconnect $empty_channel
+        # timeout timer channel
+        set chtimeout [csp::blank-channel]
+        # reconnect timer channel
+        set chreconnect [csp::blank-channel]
         while 1 {
             # TODO possibly one more source of events here: openvpn logs
             select {
@@ -3267,9 +3271,8 @@ proc connstatus-loop {} {
                     connection-windup
                     trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
                     model connstatus cancelled
-                    # cancel the timeout
-                    set chtimeout $empty_channel
-                    set chreconnect $empty_channel
+                    cancel-timer-channel chtimeout
+                    cancel-timer-channel chreconnect
                     gui-update
                 }
                 <- $::model::Chan_button_connect {
@@ -3277,7 +3280,8 @@ proc connstatus-loop {} {
                     set ::model::user_disconnected 0
                     set ::model::is_reconnecting 0
                     model connstatus connecting
-                    timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
+                    # create timeout timer channel
+                    set-chtimeout chtimeout
                     gui-update
                 }
                 <- $::model::Chan_stat_report {
@@ -3288,13 +3292,17 @@ proc connstatus-loop {} {
                         # the stat report is the ultimate source of truth about connstatus BUT it may be out of date so consider it only after a delay since last change
                         if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
                             log "newstatus: $newstatus"
-                            model connstatus $newstatus
                             if {$newstatus eq "connected"} {
                                 trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
-                                # cancel the timeout
-                                set chtimeout $empty_channel
-                                set chreconnect $empty_channel
+                                cancel-timer-channel chtimeout
+                                cancel-timer-channel chreconnect
                             }
+                            # if previous connstatus was "connected" (and no longer is) it means disconnect
+                            if {[model connstatus] eq "connected"} {
+                                cancel-timer-channel chtimeout
+                                on-conn-fail-or-timeout chreconnect
+                            }
+                            model connstatus $newstatus
                             gui-update
                         }
                     }
@@ -3302,10 +3310,10 @@ proc connstatus-loop {} {
                 }
                 <- $::model::Chan_openvpn_fail {
                     set msg [<- $::model::Chan_openvpn_fail]
+                    log "Chan_openvpn_fail signal received: $msg"
                     set ::model::Mainstatusline_last "Last connection failed. [string range $msg 0 70]"
                     model connstatus failed
-                    # cancel the timeout
-                    set chtimeout $empty_channel
+                    cancel-timer-channel chtimeout
                     on-conn-fail-or-timeout chreconnect
                     mainstatusline-update $stat
                 }
@@ -3316,8 +3324,10 @@ proc connstatus-loop {} {
                 }
                 <- $chreconnect {
                     <- $chreconnect
+                    log "chreconnect signal received. ffwrite start to daemon"
                     ffwrite start
-                    timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
+                    # create timeout timer channel
+                    set-chtimeout chtimeout
                 }
             }
         }
@@ -3326,9 +3336,27 @@ proc connstatus-loop {} {
     }
 }
 
+# close the old channel and create new blank channel
+proc cancel-timer-channel {channelvar} {
+    upvar $channelvar ch
+    if {$ch ne [csp::blank-channel]} {
+        catch {$ch close}
+    }
+    set ch [csp::blank-channel]
+}
 
-proc on-conn-fail-or-timeout {timervar} {
-    upvar chreconnect $timervar
+# close the old and create new timeout timer channel
+proc set-chtimeout {channelvar} {
+    upvar $channelvar chtimeout
+    cancel-timer-channel chtimeout
+    # create new timer channel
+    timer chtimeout [expr {1000 * $::model::openvpn_connection_timeout}]
+}
+
+
+proc on-conn-fail-or-timeout {channelvar} {
+    upvar $channelvar chreconnect
+    cancel-timer-channel chreconnect
     connection-windup
     if {[should-reconnect]} {
         timer chreconnect [expr {1000 * $::model::Gui_openvpn_connection_reconnect_delay}]
