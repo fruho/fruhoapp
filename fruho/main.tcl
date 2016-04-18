@@ -3293,6 +3293,8 @@ proc connstatus-loop {} {
                         if {[clock milliseconds] > $::model::Connstatus_change_tstamp + 1500} {
                             log "newstatus: $newstatus"
                             if {$newstatus eq "connected"} {
+                                # reset the auto reconnect delay after successful connection
+                                set ::model::Gui_openvpn_connection_reconnect_delay 3
                                 trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
                                 cancel-timer-channel chtimeout
                                 cancel-timer-channel chreconnect
