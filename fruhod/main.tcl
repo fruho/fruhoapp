@@ -249,6 +249,21 @@ proc load-config {conf} {
     return ""
 }
 
+
+proc kill-ovpn-by-saved-pid {} {
+    set ovpnpid [ovpn-pid]
+    if {$ovpnpid != 0} {
+        if {[catch {exec kill $ovpnpid} out err]} {
+            log "kill $ovpnpid failed"
+            log $out \n $err
+        } else {
+            log "killed ovpn with pid $ovpnpid"
+        }
+    }
+}
+
+
+
 proc ffread {} {
     try {
         set sock $::model::Ffconn_sock
@@ -266,10 +281,7 @@ proc ffread {} {
         switch -regexp -matchvar tokens $line {
             {^stop$} {
                 if {[ovpn-pid] != 0} {
-                    if {[catch {exec kill [ovpn-pid]} out err]} {
-                        log "kill [ovpn-pid] failed"
-                        log $out \n $err
-                    }
+                    kill-ovpn-by-saved-pid
                     OvpnExit 0
                 } else {
                     ffwrite ctrl "Nothing to be stopped"
@@ -438,6 +450,10 @@ proc OvpnRead {line} {
                 OvpnExit 1
             }
             {SIGTERM.*received, process exiting} {
+                OvpnExit 0
+            }
+            {Inactivity timeout.*restarting} {
+                kill-ovpn-by-saved-pid
                 OvpnExit 0
             }
             {PUSH: Received control message} {
