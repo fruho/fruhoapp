@@ -66,9 +66,9 @@ proc platforminfo {} {
 }
 
 proc locate-fpm {} {
-    if {[catch {exec fpm --version}] != 1} {
+    if {[catch {exec -ignorestderr fpm --version}] != 1} {
         return fpm
-    } elseif {[catch {exec fpm.ruby2.1 --version}] != 1} {
+    } elseif {[catch {exec -ignorestderr fpm.ruby2.1 --version}] != 1} {
         return fpm.ruby2.1
     } else {
         return ""
