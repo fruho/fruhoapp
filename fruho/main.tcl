@@ -3303,6 +3303,7 @@ proc connstatus-loop {} {
                             if {[model connstatus] eq "connected"} {
                                 cancel-timer-channel chtimeout
                                 on-conn-fail-or-timeout chreconnect
+                                trigger-geo-loc [expr {1000 * $::model::geo_loc_delay}]
                             }
                             model connstatus $newstatus
                             gui-update
