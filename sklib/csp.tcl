@@ -43,8 +43,24 @@ namespace eval csp {
     # counter/uid to produce unique Routine and Channel names
     variable Uid 0
 
+    # the singleton instance of the empty, read only channel used as a marker
+    variable BlankChannel ""
+
     namespace export go channel select timer ticker tickernow range range! <- <-! -> ->> forward
     namespace ensemble create
+}
+
+
+# return the singleton instance of the empty, read only channel used as a marker
+# returning the channel name instead of assigning like in 'channel' command because the name may be used to compare 
+# (checking if given channel is the marker empty channel)
+proc ::csp::blank-channel {} {
+    variable BlankChannel
+    if {$BlankChannel eq ""} {
+        ::csp::channel BlankChannel
+        CMakeReadOnly $BlankChannel
+    }
+    return $BlankChannel
 }
 
 
