@@ -72,7 +72,9 @@ proc main {} {
         socket -server daemon-new-connection -myaddr 127.0.0.1 7777
         log Listening on 127.0.0.1:7777
         cyclic-daemon-model-report
-        cyclic-linuxdeps-check
+        if {! $::model::ovpn_installing} {
+            cyclic-linuxdeps-check
+        }
     } on error {e1 e2} {
         log ERROR in main: $e1 $e2
     }
@@ -155,6 +157,9 @@ proc daemon-new-connection {sock peerhost peerport} {
     # report fruhod version when fruho client connects
     daemon-version-report
     daemon-model-report
+    if {! $::model::ovpn_installing} {
+        cyclic-linuxdeps-check
+    }
 }
 
 
