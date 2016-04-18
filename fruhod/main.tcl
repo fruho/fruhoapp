@@ -97,6 +97,24 @@ proc daemon-model-report {} {
 } 
 
 proc cyclic-daemon-model-report {} {
+    # report interval in ms
+    set interval 400
+
+    # fix openvpn bug: when disconnecting underlying connection (tested with wi-fi) openvpn enters busy loop, consumes 100% CPU, and shows high rrwrite transfer on tun0
+    # detect the incident = bug manifestation
+    # mgmt_rread is constant and mgmt_rwrite is growing fast (at least 10MB/s)
+    if {$::model::Prev_mgmt_rwrite > 0 && ($::model::mgmt_rwrite - $::model::Prev_mgmt_rwrite)/$interval > 10000 && $::model::Prev_mgmt_rread == $::model::mgmt_rread} {
+        log "Detected OpenVPN bug: busy loop with high transfer on mgmt_rwrite. Killing OpenVPN."
+        log "mgmt_rread: $::model::mgmt_rread" 
+        log "mgmt_rwrite: $::model::mgmt_rwrite" 
+        log "mgmt_vread: $::model::mgmt_vread" 
+        log "mgmt_vwrite: $::model::mgmt_vwrite" 
+        kill-ovpn-by-saved-pid
+        OvpnExit 0
+    }
+    set ::model::Prev_mgmt_rwrite $::model::mgmt_rwrite
+    set ::model::Prev_mgmt_rread $::model::mgmt_rread
+
     daemon-model-report
     after 400 cyclic-daemon-model-report
 } 

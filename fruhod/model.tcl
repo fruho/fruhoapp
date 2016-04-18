@@ -42,8 +42,10 @@ namespace eval ::model {
     variable mgmt_vwrite 0
     # TCP/UDP read bytes
     variable mgmt_rread 0
+    variable Prev_mgmt_rread 0
     # TCP/UDP write bytes
     variable mgmt_rwrite 0
+    variable Prev_mgmt_rwrite 0
     # connection state from mgmt console: AUTH,GET_CONFIG,ASSIGN_IP,CONNECTED
     # model::mgmt_connstatus may store stale value - it is valid only when ovpn_pid is not zero
     variable mgmt_connstatus ""
@@ -81,7 +83,9 @@ proc ::model::reset-ovpn-state {} {
     set ::model::mgmt_vread 0
     set ::model::mgmt_vwrite 0
     set ::model::mgmt_rread 0
+    set ::model::Prev_mgmt_rread 0
     set ::model::mgmt_rwrite 0
+    set ::model::Prev_mgmt_rwrite 0
     set ::model::mgmt_connstatus ""
     set ::model::mgmt_vip ""
     set ::model::mgmt_rip ""
