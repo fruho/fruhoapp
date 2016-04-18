@@ -158,6 +158,7 @@ proc daemon-new-connection {sock peerhost peerport} {
     daemon-version-report
     daemon-model-report
     if {! $::model::ovpn_installing} {
+        set ::model::Linuxdeps_count 0
         cyclic-linuxdeps-check
     }
 }
