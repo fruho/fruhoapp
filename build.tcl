@@ -266,6 +266,9 @@ prepare-lib sklib 0.0.0
 #build-fruhod linux armv7l
 #build-deb-rpm armv7l
 
+#build-fruhod linux x86_64
+#ex sudo /etc/init.d/fruhod restart
+
 #build-fruho linux x86_64
 #ex fruho
 
