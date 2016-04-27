@@ -11,10 +11,6 @@ if {![catch {package require starkit}]} {
 package require http
 package require tls
 package require https
-package require linuxdeps
-package require skutil
-# unix requires Tclx which litters global namespace. Need to clean up to avoid conflict with csp
-rename ::select ""
 package require csp
 namespace import csp::*
 

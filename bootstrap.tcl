@@ -30,6 +30,7 @@ proc generalize-arch {arch} {
     switch -glob $arch {
         i?86 {return ix86}
         x86_64 {return x86_64}
+        armv7l {return armv7l}
         default {error "Unrecognized CPU architecture"}
     }
 }
@@ -121,6 +122,8 @@ proc fpm-arch {arch} {
         return x86_64
     } elseif {$arch eq "ix86"} {
         return i386
+    } elseif {$arch eq "armv7l"} {
+        return armv7l
     } else {
         error "fpm-arch unrecognized arch: $arch"
     }
@@ -165,6 +168,11 @@ proc copy-pkg {os arch pkgname ver proj} {
     [catch {file copy -force [file join lib generic $pkgname-$ver]   $libdir}]} {
       #if both copy attempts failed raise error
       error "Could not find $pkgname-$ver neither in lib/$os-$arch nor lib/generic"
+  } 
+  # this is the fix for Tclx on Raspbian
+  # need to rename Tclx-8.4 to tclx8.4 when inside the starkit
+  if {$pkgname ne [string tolower $pkgname]} {
+    file rename -force [file join $libdir $pkgname-$ver] [file join $libdir [string map {- ""} [string tolower $pkgname-$ver]]]
   }
 }
 

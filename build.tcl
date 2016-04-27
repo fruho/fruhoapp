@@ -33,6 +33,8 @@ proc base-ver {arch} {
         return "8.6.3.1.298687"
     } elseif {$arch eq "ix86"} {
         return "8.6.3.1.298685"
+    } elseif {$arch eq "armv7l"} {
+        return "8.6"
     } else {
         error "base-ver unrecognized arch: $arch"
     }
@@ -54,9 +56,15 @@ proc copy-flags {countries {sizes {16 24 64}}} {
 proc build-fruho {os arch} {
     spit fruho/builddate.txt $::builddate
     spit fruho/buildver.txt $::FRUHO_VERSION
+    if {$arch eq "armv7l"} {
+        set tlsversion 1.6.7
+    } else {
+        set tlsversion 1.6.7.1
+    }
+
     #copy-flags {PL GB UK DE FR US EMPTY}
     #build $os $arch fruho base-tk-[base-ver $arch] {sklib-0.0.0 Tkhtml-3.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 snit-2.3.2 doctools-1.4.19 textutil::expander-1.3.1}
-    build $os $arch fruho base-tk-[base-ver $arch] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+    build $os $arch fruho base-tk-[base-ver $arch] [list sklib-0.0.0 tls-$tlsversion Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9]
 
     # this is necessary to prevent "cp: cannot create regular file ‘/usr/local/sbin/fruho.bin’: Text file busy"
     if {[file exists /usr/local/bin/fruho.bin]} {
@@ -249,10 +257,14 @@ set ::FRUHO_VERSION 0.0.22
 prepare-lib sklib 0.0.0
 
 #build linux x86_64 sample base-tk-[base-ver x86_64] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+#build linux armv7l sample base-tk-[base-ver armv7l] {sklib-0.0.0 tls-1.6.7 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 
 #build-total
 #build-total ix86
 #build-total x86_64
+#build-fruho linux armv7l
+#build-fruhod linux armv7l
+#build-deb-rpm armv7l
 
 #build-fruho linux x86_64
 #ex fruho
