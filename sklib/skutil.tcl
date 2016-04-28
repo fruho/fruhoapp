@@ -873,6 +873,7 @@ proc generalize-arch {arch} {
     switch -glob $arch {
         i?86 {return ix86}
         x86_64 {return x86_64}
+        armv7l {return armv7l}
         default {error "Unrecognized CPU architecture"}
     }
 }
