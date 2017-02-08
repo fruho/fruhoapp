@@ -261,7 +261,7 @@ proc extract-cn-from {filetype crtpath} {
     if {[catch {exec {*}$cmd} subject err]} {
         error [log $err]
     }
-    if {[regexp {CN=([0-9a-f]{4,16})} $subject -> cn]} {
+    if {[regexp {CN\s?=\s?([0-9a-f]{4,16})} $subject -> cn]} {
         log Extracted cn $cn from subject $subject
         return $cn
     } else {
