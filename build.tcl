@@ -253,15 +253,15 @@ proc push-update {os arch tohost} {
 
 
 
-set ::FRUHO_VERSION 0.0.22
+set ::FRUHO_VERSION 0.0.25
 prepare-lib sklib 0.0.0
 
-#build linux x86_64 sample base-tk-[base-ver x86_64] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
+build linux x86_64 sample base-tk-[base-ver x86_64] {sklib-0.0.0 tls-1.6.7.1 Tclx-8.4 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 #build linux armv7l sample base-tk-[base-ver armv7l] {sklib-0.0.0 tls-1.6.7 cmdline-1.5 json-1.3.3 uri-1.2.5 base64-2.4.2 tktray-1.3.9}
 
 #build-total
-#build-total ix86
-#build-total x86_64
+build-total ix86
+build-total x86_64
 #build-fruho linux armv7l
 #build-fruhod linux armv7l
 #build-deb-rpm armv7l

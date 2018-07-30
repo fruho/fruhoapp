@@ -143,8 +143,9 @@ proc ::https::tls-callback {option args} {
                 return 0
             }
             set host [dict get $sock2host $chan]
+            log "HOST2EXPECTED: $host2expected"
             #TODO expected-hostname - allow providing a list of expected hostnames
-            if {$host ne "" && ($host eq $cn || ([info exists host2expected] && [dict exists $host2expected $host] && [dict get $host2expected $host] eq $cn))} {
+            if {$host ne "" && ($host eq $cn || ([info exists host2expected] && [dict exists $host2expected $host] && ([dict get $host2expected $host] eq "www.$cn" || [dict get $host2expected $host] eq $cn)))} {
                 log Hostname matched the Common Name: $cn
                 tls-cleanup $chan
                 return 1

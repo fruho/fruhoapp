@@ -53,7 +53,9 @@ namespace eval ::model {
     # The OpenVPN connection protocol port preference order
     variable protoport_order {{udp 5353} {udp 53} {udp 443} {udp 5000} {tcp 443}}
 
-    variable dns_cache [dict create www.securitykiss.com 91.227.221.115]
+    variable dns_cache {}
+    #variable dns_cache [dict create www.securitykiss.com 91.216.93.19]
+
 
     # sample welcome message:
     # ip 127.0.0.1
